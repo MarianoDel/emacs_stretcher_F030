@@ -76,8 +76,8 @@ void AdcConfig (void)
 	ADC1->CFGR2 = ADC_ClockMode_SynClkDiv4;
 
 	//set resolution, trigger & Continuos or Discontinuous
-	// ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
-	ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T1_TRGO;
+	ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
+	//ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T1_TRGO;
 	//ADC1->CFGR1 |= ADC_Resolution_12b | ADC_CFGR1_DISCEN;
 	// ADC1->CFGR1 |= ADC_Resolution_12b;
 
@@ -93,7 +93,7 @@ void AdcConfig (void)
 
 #ifdef ADC_WITH_INT
 	//set channel selection
-	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2;
+	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1;
 
 	//set interrupts
 	ADC1->IER |= ADC_IT_EOC;
@@ -121,9 +121,9 @@ void ADC1_COMP_IRQHandler (void)
 {
 	if (ADC1->ISR & ADC_IT_EOC)
 	{
-		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel3 en posicion 3
+		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel2 en posicion 1
 		{
-			p_channel = &adc_ch[2];
+			p_channel = &adc_ch[1];
 			*p_channel = ADC1->DR;
 			p_channel = &adc_ch[0];
 			seq_ready = 1;
@@ -131,7 +131,7 @@ void ADC1_COMP_IRQHandler (void)
 		else
 		{
 			*p_channel = ADC1->DR;		//
-			if (p_channel < &adc_ch[2])
+			if (p_channel < &adc_ch[1])
 				p_channel++;
 		}
 

@@ -23,9 +23,8 @@
 //----------- End of ADC Configurations --------------//
 
 #ifdef ADC_WITH_INT
-#define Vin_Sense		adc_ch[0]
-#define Vout_Sense	adc_ch[1]
-#define I_Sense		adc_ch[2]
+#define Input_Signal		adc_ch[0]
+#define I_Sense	adc_ch[1]
 #endif
 
 

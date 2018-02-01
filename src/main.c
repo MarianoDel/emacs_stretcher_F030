@@ -44,17 +44,8 @@ volatile unsigned char usart1_have_data = 0;
 
 // ------- Externals del o para el ADC -------
 #ifdef ADC_WITH_INT
-
-volatile unsigned short adc_ch[3];
-
-// #define Iout_Sense	adc_ch[0]
-// #define Vin_Sense		adc_ch[1]
-// #define I_Sense		adc_ch[2]
-// #define Vout_Sense	adc_ch[3]
-
+volatile unsigned short adc_ch[2];
 volatile unsigned char seq_ready = 0;
-unsigned short zero_current;
-
 #endif
 
 // ------- Externals para filtros -------
@@ -134,11 +125,9 @@ int main(void)
 	unsigned char need_to_save = 0;
 	unsigned short d = 0;
 	unsigned int zero_current_loc = 0;
+	unsigned short seq_index = 0;
 
 	main_state_t main_state = MAIN_INIT;
-
-
-	unsigned short hyst;
 
 	char s_lcd [100];		//lo agrando porque lo uso tambien para enviar SMS
 
@@ -164,24 +153,24 @@ int main(void)
 		}
 	}
 
-	//--- Leo los parametros de memoria ---//
-
-  // hile (1)
-  // {
-  //  if (STOP_JUMPER)
-  //  {
-  //  	LED_OFF;
-  //  }
-  //  else
-  //  {
-  // 	  if (LED)
-  // 	  	LED_OFF;
-  // 	  else
-  // 	  	LED_ON;
-  //
-  // 	  Wait_ms (250);
-  //  }
-  // }
+	//--- Prueba LED y JUMPER ---//
+	// while (1)
+	// {
+	// 	if (STOP_JUMPER)
+	// 	{
+	// 		LED_OFF;
+	// 	}
+	// 	else
+	// 	{
+	// 		if (LED)
+	// 			LED_OFF;
+	// 		else
+	// 		  	LED_ON;
+	//
+	// 		Wait_ms (250);
+	// 	}
+	// }
+	//--- Fin Prueba LED y JUMPER ---//
 
 
 
@@ -190,60 +179,122 @@ int main(void)
 
 	USART1Config();
 
+	//--- Prueba LED y USART TX ---//
+	// while (1)
+	// {
+	// 	Usart1Send((char *) (const char *) "ADC Sync getted!\r\n");
+	// 	if (LED)
+	// 		LED_OFF;
+	// 	else
+	// 		LED_ON;
+	//
+	// 	Wait_ms (1000);
+	// }
+	//--- Fin Prueba LED y USART TX---//
+
+	//--- Prueba LED y USART RX ---//
+	// while (1)
+	// {
+	// 	if (usart1_have_data)
+	// 	{
+	// 		LED_ON;
+	// 		usart1_have_data = 0;
+	// 		ReadUsart1Buffer (s_lcd, SIZEOF_DATA);
+	// 		Usart1Send(s_lcd);
+	// 		LED_OFF;
+	// 	}
+	// }
+	//--- Fin Prueba LED y USART RX ---//
 
 //---------- Pruebas de Hardware --------//
 	AdcConfig();		//recordar habilitar sensor en adc.h
 
-	TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+	// TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
 	TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
-	TIM_14_Init();					//Set current overflow
+
+	//Update_TIM3_CH2 (10);
+	// TIM3->CCR3 = 1000;
+	// TIM3->ARR = 6858;
+
+	// while (1);
+
+	//--- Prueba Pines PWM ---//
+	while (1)
+	{
+		Update_TIM3_CH1 (DUTY_50_PERCENT);
+		Update_TIM3_CH2 (0);
+		Update_TIM3_CH3 (0);
+		Update_TIM3_CH4 (0);
+
+		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
+		Usart1Send(s_lcd);
+
+		Wait_ms (10000);
+
+		Update_TIM3_CH1 (0);
+		Update_TIM3_CH2 (DUTY_50_PERCENT);
+		Update_TIM3_CH3 (0);
+		Update_TIM3_CH4 (0);
+
+		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
+		Usart1Send(s_lcd);
+
+		Wait_ms (10000);
+
+		Update_TIM3_CH1 (0);
+		Update_TIM3_CH2 (0);
+		Update_TIM3_CH3 (DUTY_50_PERCENT);
+		Update_TIM3_CH4 (0);
+
+		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
+		Usart1Send(s_lcd);
+
+		Wait_ms (10000);
+
+		Update_TIM3_CH1 (0);
+		Update_TIM3_CH2 (0);
+		Update_TIM3_CH3 (0);
+		Update_TIM3_CH4 (DUTY_50_PERCENT);
+
+		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
+		Usart1Send(s_lcd);
+
+		Wait_ms (10000);
+	}
+	//--- Fin Prueba Pines PWM ---//
+
+	// TIM_14_Init();					//Set current overflow
 
 	// UpdateTIMSync (12);
 	// Update_TIM3_CH1 (100);		//lo uso para ver diff entre synchro adc con led
 	// Update_TIM14_CH1 (512);		//lo uso para ver diff entre synchro adc con led
 	// Update_TIM1_CH1 (100);		//lo uso para ver diff entre synchro adc con led
 
-	// while (1)
-	// {
-	// 	// ISENSE_OFF;
-	// 	// Wait_ms(100);
-	// 	// ISENSE_ON;
-	// 	// Wait_ms(2);
-	// }
-
-	// while (1)
-	// {
-	// 	if (usart1_have_data)
-	// 	{
-	// 		usart1_have_data = 0;
-	// 		ReadUsart1Buffer (s_lcd, SIZEOF_DATA);
-	// 		Usart1Send(s_lcd);
-	// 	}
-	// 	// Wait_ms(1000);
+	//--- Prueba ADC y synchro ---//
+	// ADC1->CR |= ADC_CR_ADSTART;
+	// seq_ready = 0;
+	// seq_index = 0;
 	//
-	// 	// Usart1Send((char *) (const char *) "  Features:\r\n");
-	// 	// Wait_ms(5000);
+	// while (1)
+	// {
+	// 	if (seq_ready)
+	// 	{
+	// 		seq_ready = 0;
+	// 		seq_index++;
+	// 	}
+	//
+	// 	if (seq_index > 10000)
+	// 	{
+	// 		seq_index = 0;
+	// 		sprintf(s_lcd, "ch0: %4d ch1: %4d\r\n", Input_Signal, I_Sense);
+	// 		Usart1Send(s_lcd);
+	// 		if (LED)
+	// 			LED_OFF;
+	// 		else
+	// 		  	LED_ON;
+	// 	}
 	// }
-
-// Usart1Send((char *) (const char *) "\r\nKirno Placa Redonda - Basic V1.0\r\n");
-// Usart1Send((char *) (const char *) "  Features:\r\n");
-// #ifdef WITH_1_TO_10_VOLTS
-// Usart1Send((char *) (const char *) "  Dimmer 1 to 10V\r\n");
-// #endif
-// #ifdef WITH_HYST
-// Usart1Send((char *) (const char *) "  Night Hysteresis\r\n");
-// #endif
-// #ifdef WITH_TEMP_CONTROL
-// Usart1Send((char *) (const char *) "  Temp Control\r\n");
-// #endif
-// #ifdef USE_WITH_SYNC
-// Usart1Send((char *) (const char *) "  Sync by Edges\r\n");
-// #else
-// Usart1Send((char *) (const char *) "  Sync by ADC\r\n");
-// #endif
-// #ifdef USE_GSM
-// Usart1Send((char *) (const char *) "  Uses GSM for SMS data\r\n");
-// #endif
+	//--- Fin Prueba ADC y synchro ---//
 
 	while (1)
 	{
@@ -321,12 +372,12 @@ int main(void)
 				break;
 		}	//fin switch main_state
 
-		if (!timer_standby)
-		{
-			timer_standby = 2000;
-			sprintf (s_lcd, "VIN: %d, VOUT: %d, d: %d\r\n", Vin_Sense, Vout_Sense, d);
-			Usart1Send(s_lcd);
-		}
+		// if (!timer_standby)
+		// {
+		// 	timer_standby = 2000;
+		// 	sprintf (s_lcd, "VIN: %d, VOUT: %d, d: %d\r\n", Vin_Sense, Vout_Sense, d);
+		// 	Usart1Send(s_lcd);
+		// }
 
 		if (current_excess)
 		{

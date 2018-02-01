@@ -38,47 +38,6 @@ unsigned short vgrid_update_samples;
 /* Module Functions ------------------------------------------------------------*/
 
 
-#ifdef WITH_HYST
-unsigned short GetHysteresis (unsigned char hours_past)
-{
-	if (hours_past > 8)
-		return HYST_MIN;
-	else if (hours_past > 6)
-		return HYST_6;
-	else if (hours_past > 4)
-		return HYST_4;
-	else if (hours_past > 2)
-		return HYST_2;
-	else
-		return HYST_MAX;
-}
-#endif
-
-#ifdef WITH_1_TO_10_VOLTS
-unsigned char GetNew1to10 (unsigned short light)	//prendo en 3722 a 4095 tengo 373 puntos
-{
-	unsigned short new_light = 0;
-
-	if (light > VOLTAGE_PHOTO_ON)
-	{
-		new_light = light - VOLTAGE_PHOTO_ON;
-	}
-	new_light += PWM_MIN;
-
-	if (new_light > 255)
-		new_light = 255;
-
-	// if (light < VOLTAGE_PHOTO_ON)
-	// 	new_light = PWM_MIN;
-	// else
-	// {
-	// 	new_light = light - VOLTAGE_PHOTO_ON;
-	// 	new_light += PWM_MIN;
-	// }
-
-	return (unsigned char) new_light;
-}
-#endif
 
 //Hay que llamarla sincronizado con las muestras, entran 312 en un ciclo
 void UpdateVGrid (void)
@@ -126,11 +85,6 @@ void UpdateVGrid (void)
 			mains_vector[0] = max_vgrid_last;
 		}
     }
-}
-
-unsigned char Mains_Glitch (void)
-{
-	return mains_with_glitch;
 }
 
 //Hay que llamarla sincronizado con las muestras, entran 312 en un ciclo
