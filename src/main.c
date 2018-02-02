@@ -222,7 +222,7 @@ int main(void)
 	// EXTIOff ();
 	// while (1)
 	// {
-	// 	for (d = 0; d <= 6800; d++)
+	// 	for (d = 0; d < DUTY_100_PERCENT; d++)
 	// 	{
 	// 		Update_TIM3_CH1 (d);
 	// 		Update_TIM3_CH2 (d);
@@ -232,57 +232,73 @@ int main(void)
 	// 		Wait_ms(2);
 	// 	}
 	// }
-
-	while (1)
-	{
-		Update_TIM3_CH1 (DUTY_50_PERCENT);
-		Update_TIM3_CH2 (0);
-		Update_TIM3_CH3 (0);
-		Update_TIM3_CH4 (0);
-
-		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
-		Usart1Send(s_lcd);
-
-		Wait_ms (10000);
-
-		Update_TIM3_CH1 (0);
-		Update_TIM3_CH2 (DUTY_50_PERCENT);
-		Update_TIM3_CH3 (0);
-		Update_TIM3_CH4 (0);
-
-		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
-		Usart1Send(s_lcd);
-
-		Wait_ms (10000);
-
-		Update_TIM3_CH1 (0);
-		Update_TIM3_CH2 (0);
-		Update_TIM3_CH3 (DUTY_50_PERCENT);
-		Update_TIM3_CH4 (0);
-
-		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
-		Usart1Send(s_lcd);
-
-		Wait_ms (10000);
-
-		Update_TIM3_CH1 (0);
-		Update_TIM3_CH2 (0);
-		Update_TIM3_CH3 (0);
-		Update_TIM3_CH4 (DUTY_50_PERCENT);
-
-		sprintf(s_lcd, "ARR: %d ch1: %d\r\n", TIM3->ARR, TIM3->CCR3);
-		Usart1Send(s_lcd);
-
-		Wait_ms (10000);
-	}
 	//--- Fin Prueba Pines PWM ---//
 
-	// TIM_14_Init();					//Set current overflow
+	//--- Prueba de seniales PWM ---//
+	//CUADRADA baja
+	// LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+	// HIGH_RIGHT_PWM(0);
+	//
+	// while (1)
+	// {
+	// 	HIGH_LEFT_PWM(0);
+	// 	LOW_LEFT_PWM(DUTY_50_PERCENT);
+	//
+	// 	Wait_ms(20);
+	//
+	// 	LOW_LEFT_PWM(0);
+	//
+	// 	Wait_ms(20);
+	// }
 
-	// UpdateTIMSync (12);
-	// Update_TIM3_CH1 (100);		//lo uso para ver diff entre synchro adc con led
-	// Update_TIM14_CH1 (512);		//lo uso para ver diff entre synchro adc con led
-	// Update_TIM1_CH1 (100);		//lo uso para ver diff entre synchro adc con led
+	// //CUADRADA alta derecha
+	// while (1)
+	// {
+	// 	HIGH_LEFT_PWM(0);
+	// 	LOW_LEFT_PWM(DUTY_100_PERCENT+1);
+	//
+	// 	LOW_RIGHT_PWM(0);
+	// 	HIGH_RIGHT_PWM(DUTY_50_PERCENT);
+	//
+	// 	Wait_ms(20);
+	//
+	// 	HIGH_RIGHT_PWM(0);
+	// 	Wait_ms(20);
+	// }
+
+	//CUADRADA alta izquierda
+	while (1)
+	{
+		LOW_LEFT_PWM(0);
+		HIGH_RIGHT_PWM(0);
+		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+
+		HIGH_LEFT_PWM(DUTY_50_PERCENT);
+		Wait_ms(20);
+
+		HIGH_LEFT_PWM(0);
+		Wait_ms(20);
+	}
+
+	//RAMPA
+	while (1)
+	{
+		LOW_LEFT_PWM(0);
+		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+		HIGH_RIGHT_PWM(0);
+
+		for (i = 0; i < DUTY_50_PERCENT; i++)
+		{
+			HIGH_LEFT_PWM(i);
+			Wait_ms(1);
+		}
+		HIGH_LEFT_PWM(0);
+		Wait_ms(DUTY_50_PERCENT);
+	}
+
+	//--- Fin Prueba de seniales PWM ---//
+
+
 
 	//--- Prueba ADC y synchro ---//
 	// ADC1->CR |= ADC_CR_ADSTART;

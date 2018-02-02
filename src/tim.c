@@ -148,9 +148,9 @@ void TIM_3_Init (void)			//quiero algo alrededor de los 7KHz
 	//  TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;    //CH1 enable on pin active high
 	TIM3->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E;    //CH1-4 enable on pin active high
 	//TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
-	TIM3->ARR = 6858;
+	TIM3->ARR = DUTY_100_PERCENT;
 	TIM3->CNT = 0;
-	TIM3->PSC = 0;
+	TIM3->PSC = 6;		//+1
 	//TIM3->EGR = TIM_EGR_UG;    //generate event
 
 	//Configuracion Pines
