@@ -219,6 +219,20 @@ int main(void)
 	// while (1);
 
 	//--- Prueba Pines PWM ---//
+	// EXTIOff ();
+	// while (1)
+	// {
+	// 	for (d = 0; d <= 6800; d++)
+	// 	{
+	// 		Update_TIM3_CH1 (d);
+	// 		Update_TIM3_CH2 (d);
+	// 		Update_TIM3_CH3 (d);
+	// 		Update_TIM3_CH4 (d);
+	//
+	// 		Wait_ms(2);
+	// 	}
+	// }
+
 	while (1)
 	{
 		Update_TIM3_CH1 (DUTY_50_PERCENT);

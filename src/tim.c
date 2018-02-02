@@ -123,6 +123,7 @@ void TIM_1_Init (void)
 	TIM1->CCR1 = 0;
 }
 
+
 void TIM_3_Init (void)			//quiero algo alrededor de los 7KHz
 {
 	unsigned int temp = 0;

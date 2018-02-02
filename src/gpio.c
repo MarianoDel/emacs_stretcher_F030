@@ -152,11 +152,11 @@ void GPIO_Config (void)
 	if (!SYSCFG_CLK)
 		SYSCFG_CLK_ON;
 
-	SYSCFG->EXTICR[0] = 0x00000001; //Select Port B & Pin 1 external interrupt
-	EXTI->IMR |= 0x00000001; 			//Corresponding mask bit for interrupts EXTI0
+	SYSCFG->EXTICR[0] = 0x00000000; //Select Port A & Pin 2 external interrupt
+	EXTI->IMR |= 0x00000004; 			//Corresponding mask bit for interrupts EXTI0
 	EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
-	EXTI->RTSR |= 0x00000000; 			//Pin 0 Interrupt line on rising edge
-	EXTI->FTSR |= 0x00000001; 			//Pin 0 Interrupt line on falling edge
+	EXTI->RTSR |= 0x00000004; 			//Pin 2 Interrupt line on rising edge
+	EXTI->FTSR |= 0x00000000; 			//Pin 2 Interrupt line on falling edge
 
 	NVIC_EnableIRQ(EXTI0_1_IRQn);
 	NVIC_SetPriority(EXTI0_1_IRQn, 6);
