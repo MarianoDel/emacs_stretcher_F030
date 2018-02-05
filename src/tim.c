@@ -92,17 +92,17 @@ void TIM_1_Init (void)
 	//TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
 	TIM1->SMCR = 0x0000;
 	//TIM1->CCMR1 = 0x6000;            //CH2 output PWM mode 1
-	TIM1->CCMR1 = 0x6060;      //CH1, CH2 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
-	TIM1->CCMR2 = 0x6060;      //CH3, CH4 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
+	// TIM1->CCMR1 = 0x6060;      //CH1, CH2 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
+	// TIM1->CCMR2 = 0x6060;      //CH3, CH4 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
 	//  TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;
-	TIM1->CCER |= TIM_CCER_CC1E;
-	TIM1->BDTR |= TIM_BDTR_MOE;
+	// TIM1->CCER |= TIM_CCER_CC1E;
+	// TIM1->BDTR |= TIM_BDTR_MOE;
 	// TIM1->ARR = 1023;                //cada tick 20.83ns
-	TIM1->ARR = DUTY_100_PERCENT;                //cada tick 20.83ns
+	TIM1->ARR = 667;       	//freq 1500Hz con tick 1us
 
 
 	TIM1->CNT = 0;
-	TIM1->PSC = 0;
+	TIM1->PSC = 47;	//+1 cada tick 1us
 
 	//Configuracion Pines
 	//Alternate Fuction
@@ -111,10 +111,10 @@ void TIM_1_Init (void)
 	//  temp |= 0x00020000;
 	//  GPIOA->MODER = temp;
 
-	temp = GPIOA->AFR[1];
-	temp &= 0xFFFFFFF0;
-	temp |= 0x00000002;    //PA8 -> AF2
-	GPIOA->AFR[1] = temp;
+	// temp = GPIOA->AFR[1];
+	// temp &= 0xFFFFFFF0;
+	// temp |= 0x00000002;    //PA8 -> AF2
+	// GPIOA->AFR[1] = temp;
 
 	// Enable timer ver UDIS
 	//TIM1->DIER |= TIM_DIER_UIE;

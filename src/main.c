@@ -87,9 +87,15 @@ volatile unsigned short secs = 0;
 volatile unsigned char hours = 0;
 volatile unsigned char minutes = 0;
 
+//pruebas con seniales
+const unsigned char s_trapecio [40] = {63, 126, 189, 255, 255, 255, 255, 255, 255, 255,
+													255, 255, 255, 255, 255, 255, 255, 189, 126, 63,
+													0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+													0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
 
+#define SP_IOUT		135
 
 
 //--- FUNCIONES DEL MODULO ---//
@@ -126,6 +132,7 @@ int main(void)
 	unsigned short d = 0;
 	unsigned int zero_current_loc = 0;
 	unsigned short seq_index = 0;
+	unsigned char * p_signal;
 
 	main_state_t main_state = MAIN_INIT;
 
@@ -209,8 +216,8 @@ int main(void)
 //---------- Pruebas de Hardware --------//
 	AdcConfig();		//recordar habilitar sensor en adc.h
 
-	// TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
-	TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+	TIM_1_Init ();					//lo utilizo para synchro ADC mustras 1500Hz
+	TIM_3_Init ();					//lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
 
 	//Update_TIM3_CH2 (10);
 	// TIM3->CCR3 = 1000;
@@ -267,18 +274,84 @@ int main(void)
 	// }
 
 	//CUADRADA alta izquierda
+	//--- Prueba ADC y synchro ---//
+	ADC1->CR |= ADC_CR_ADSTART;	//1500Hz con TIM1
+	seq_ready = 0;
+	seq_index = 0;
+
+	p_signal = s_trapecio;
+
+
+	//--- Pruebas lazo PID
+	//-- primero preparo el puente H segun la funcion que busque
+	LOW_LEFT_PWM(0);
+	HIGH_RIGHT_PWM(0);
+	LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+
+	HIGH_LEFT_PWM(0);	//este es el que actua
+
+	// while (1)
+	// {
+	// 	if (seq_ready)
+	// 	{
+	// 		seq_ready = 0;
+	// 		d = PID_roof (SP_IOUT, I_Sense, d);
+	// 		if (d < 0)
+	// 			d = 0;
+	// 		else if (d > DUTY_50_PERCENT)		//por ahora no lo dejo pasar del 50%
+	// 			d = DUTY_50_PERCENT;
+	//
+	// 		seq_index++;
+	// 	}
+	//
+	// 	HIGH_LEFT_PWM(d);
+	//
+	// 	if (seq_index >= 1500)
+	// 	{
+	// 		seq_index = 0;
+	// 		sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, SP_IOUT);
+	// 		Usart1Send(s_lcd);
+	// 	}
+	// }
+
 	while (1)
 	{
-		LOW_LEFT_PWM(0);
-		HIGH_RIGHT_PWM(0);
-		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+		if (seq_ready)
+		{
+			seq_ready = 0;
+			d = PID_roof (*p_signal, I_Sense, d);
 
-		HIGH_LEFT_PWM(DUTY_50_PERCENT);
-		Wait_ms(20);
+			if (d < 0)
+				d = 0;
+			else if (d > DUTY_50_PERCENT)		//por ahora no lo dejo pasar del 50%
+				d = DUTY_50_PERCENT;
 
-		HIGH_LEFT_PWM(0);
-		Wait_ms(20);
+			seq_index++;
+		}
+
+		HIGH_LEFT_PWM(d);
+
+		// if (seq_index >= 1500)
+		// {
+		// 	seq_index = 0;
+		// 	sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, *p_signal);
+		// 	Usart1Send(s_lcd);
+		// }
+
+		if (!timer_standby)
+		{
+			timer_standby = 10;
+			if (p_signal < &s_trapecio[39])
+				p_signal++;
+			else
+				p_signal = s_trapecio;
+
+			sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, *p_signal);
+			Usart1Send(s_lcd);
+
+		}
 	}
+
 
 	//RAMPA
 	while (1)

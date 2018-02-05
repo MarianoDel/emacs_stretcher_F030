@@ -15,6 +15,43 @@
 /* Externals variables ---------------------------------------------------------*/
 
 
+/* Global variables ---------------------------------------------------------*/
+//------- de los PID ---------
+volatile int acc = 0;
+short error_z1 = 0;
+short error_z2 = 0;
+short d_last = 0;
+
+/* Module Definitions ---------------------------------------------------------*/
+//todos se dividen por 128
+#define KPV	64			// 1
+// #define KIV	64			// 0.5
+#define KIV	4			// 0.5
+#define KDV	0			// 0
+
+//todos se dividen por 128
+#define KPI	128			// 1
+#define KII	16			// .125
+#define KDI	0			// 0
+
+
+#define K1V (KPV + KIV + KDV)
+#define K2V (KPV + KDV + KDV)
+#define K3V (KDV)
+
+#define K1I (KPI + KII + KDI)
+#define K2I (KPI + KDI + KDI)
+#define K3I (KDI)
+
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+// #warning STRING(K1V)
+// #pragma message K1V
+#pragma message(STRING(K1V))
+#pragma message(STRING(K2V))
+#pragma message(STRING(K3V))
+
+
 
 /* Module functions ---------------------------------------------------------*/
 
@@ -143,4 +180,69 @@ unsigned short MAFilter32Circular (unsigned short new_sample, unsigned short * p
 	*p_sum = (unsigned short) total_ma;
 
 	return total_ma >> 5;
+}
+
+short PID (short setpoint, short sample)
+{
+	short error = 0;
+	short d = 0;
+
+	short val_k1 = 0;
+	short val_k2 = 0;
+	short val_k3 = 0;
+
+	error = setpoint - sample;
+
+	//K1
+	acc = K1V * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+	val_k1 = acc >> 7;
+
+	//K2
+	acc = K2V * error_z1;		//K2 = no llega pruebo con 1
+	val_k2 = acc >> 7;			//si es mas grande que K1 + K3 no lo deja arrancar
+
+	//K3
+	acc = K3V * error_z2;		//K3 = 0.4
+	val_k3 = acc >> 7;
+
+	d = d_last + val_k1 - val_k2 + val_k3;
+
+	//Update variables PID
+	error_z2 = error_z1;
+	error_z1 = error;
+	d_last = d;
+
+	return d;
+}
+
+short PID_roof (short setpoint, short sample, short last_d)
+{
+	short error = 0;
+	short d = 0;
+
+	short val_k1 = 0;
+	short val_k2 = 0;
+	short val_k3 = 0;
+
+	error = setpoint - sample;
+
+	//K1
+	acc = K1V * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+	val_k1 = acc >> 7;
+
+	//K2
+	acc = K2V * error_z1;		//K2 = no llega pruebo con 1
+	val_k2 = acc >> 7;			//si es mas grande que K1 + K3 no lo deja arrancar
+
+	//K3
+	acc = K3V * error_z2;		//K3 = 0.4
+	val_k3 = acc >> 7;
+
+	d = last_d + val_k1 - val_k2 + val_k3;
+
+	//Update variables PID
+	error_z2 = error_z1;
+	error_z1 = error;
+
+	return d;
 }
