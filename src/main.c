@@ -88,16 +88,6 @@ volatile unsigned char hours = 0;
 volatile unsigned char minutes = 0;
 
 //pruebas con seniales
-const unsigned char s_trapecio [40] = {63, 126, 189, 255, 255, 255, 255, 255, 255, 255,
-													255, 255, 255, 255, 255, 255, 255, 189, 126, 63,
-													0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-													0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-const unsigned char s_cuadrada_08A [40] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-													255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-													0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-													0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
 
 const unsigned short s_senoidal_0_5A [150] = {0,6,12,19,25,32,38,44,50,57,
 														68,74,80,85,91,96,101,106,110,
@@ -130,6 +120,40 @@ const unsigned short s_senoidal_1_5A [150] ={0,19,38,58,77,96,115,134,152,171,
 														0,0,0,0,0,0,0,0,0,
 														0,0,0,0,0,0,0,0,0,
 														0,0,0,0,0,0,0,0,0};
+
+const unsigned short s_cuadrada_1_5A [150] = {465,465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,465,465,465,465,465,
+														465,465,465,465,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0};
+
+const unsigned short s_triangular_1_5A [150] = {0,6,12,18,24,31,37,43,49,55,
+														68,74,80,86,93,99,105,111,117,
+														130,136,142,148,155,161,167,173,179,
+														192,198,204,210,217,223,229,235,241,
+														254,260,266,272,279,285,291,297,303,
+														316,322,328,334,341,347,353,359,365,
+														378,384,390,396,403,409,415,421,427,
+														440,446,452,458,465,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0,
+														0,0,0,0,0,0,0,0,0};
+
+
 #define SP_IOUT		135
 
 
@@ -171,6 +195,7 @@ int main(void)
 	unsigned char ciclo_descarga_rapida = 0;
 
 	main_state_t main_state = MAIN_INIT;
+	discharge_state_t discharge_state = INIT_DISCHARGE;
 
 	char s_lcd [100];		//lo agrando porque lo uso tambien para enviar SMS
 
@@ -317,9 +342,10 @@ int main(void)
 
 	// p_signal = s_trapecio;
 	// p_signal = s_cuadrada_08A;
-	// p_signal = s_cuadrada_05A;
+	// p_signal = s_cuadrada_1_5A;
 	// p_signal = s_senoidal_0_5A;
-	p_signal = s_senoidal_1_5A;
+	// p_signal = s_senoidal_1_5A;
+	p_signal = s_triangular_1_5A;
 
 
 	//--- Pruebas lazo PID
@@ -354,53 +380,130 @@ int main(void)
 	// 	}
 	// }
 
+	discharge_state = INIT_DISCHARGE;
 	while (1)
 	{
 		if (seq_ready)
 		{
 			seq_ready = 0;
 
-			d = PID_roof (*p_signal, I_Sense, d);
-
-			//descarga rapida
-			if (d < 0)
+			switch (discharge_state)
 			{
-				//TODO: OJO aca tendria que terminar un ciclo completo de descarga
-				//para tener LOW_RIGHT nuevamente conectado a masa
-				if (d < (-50))		//esto lo evalua bien??
-				{
-					ciclo_descarga_rapida = 1;
-					LOW_RIGHT_PWM(0);
-					Usart1Send('.');
-				}
-				else
-				{
-					LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
-				}
-				HIGH_LEFT_PWM(0);
-			}
-			else
-			{
-				if (ciclo_descarga_rapida)		//si anduve por la descarga rapida
-				{
-					ciclo_descarga_rapida = 0;
-					LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
-				}
+				case INIT_DISCHARGE:			//arranco siempre con descarga por TAU
+					HIGH_LEFT_PWM(0);
+					LOW_RIGHT_PWM(DUTY_ALWAYS);
+					discharge_state = NORMAL_DISCHARGE;
+					break;
 
-				if (d > DUTY_95_PERCENT)		//por ahora no lo dejo pasar del 50%
-					d = DUTY_95_PERCENT;
+				case NORMAL_DISCHARGE:
 
-				HIGH_LEFT_PWM(d);
+					d = PID_roof (*p_signal, I_Sense, d);
+
+					//reviso si necesito cambiar a descarga por tau
+					if (d < 0)
+					{
+						HIGH_LEFT_PWM(0);
+						discharge_state = TAU_DISCHARGE;
+						d = 0;	//limpio para pid descarga
+					}
+					else
+					{
+						if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+							d = DUTY_95_PERCENT;
+
+						HIGH_LEFT_PWM(d);
+					}
+					break;
+
+				case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
+
+					d = PID_roof (*p_signal, I_Sense, d);	//OJO cambiar este pid
+
+					//reviso si necesito cambiar a descarga rapida
+					if (d < 0)
+					{
+						if (-d < DUTY_100_PERCENT)
+							LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
+						else
+							LOW_RIGHT_PWM(0);
+
+						discharge_state = FAST_DISCHARGE;
+					}
+					else
+					{
+						//vuelvo a NORMAL_DISCHARGE
+						if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+							d = DUTY_95_PERCENT;
+
+						HIGH_LEFT_PWM(d);
+						discharge_state = NORMAL_DISCHARGE;
+					}
+					break;
+
+				case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
+
+					d = PID_roof (*p_signal, I_Sense_negado, d);	//OJO cambiar este pid
+
+					//reviso si necesito cambiar a descarga rapida
+					if (d < 0)
+					{
+						if (-d < DUTY_100_PERCENT)
+							LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
+						else
+							LOW_RIGHT_PWM(0);
+					}
+					else
+					{
+						//vuelvo a TAU_DISCHARGE
+						LOW_RIGHT_PWM(DUTY_ALWAYS);
+						discharge_state = TAU_DISCHARGE;
+					}
+					break;
+
+				default:
+					discharge_state = INIT_DISCHARGE;
+					break;
 			}
+
+			// //necesito pasar a descarga rapida
+			// if (d < 0)
+			// {
+			// 	//TODO: OJO aca tendria que terminar un ciclo completo de descarga
+			// 	//para tener LOW_RIGHT nuevamente conectado a masa
+			// 	if (d < (-50))		//esto lo evalua bien??
+			// 	{
+			// 		ciclo_descarga_rapida = 1;
+			// 		LOW_RIGHT_PWM(0);
+			// 		Usart1Send('.');
+			// 	}
+			// 	else
+			// 	{
+			// 		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+			// 	}
+			// 	HIGH_LEFT_PWM(0);
+			// }
+			// else
+			// {
+			// 	if (ciclo_descarga_rapida)		//si anduve por la descarga rapida
+			// 	{
+			// 		ciclo_descarga_rapida = 0;
+			// 		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+			// 	}
+			//
+			// 	if (d > DUTY_95_PERCENT)		//por ahora no lo dejo pasar del 50%
+			// 		d = DUTY_95_PERCENT;
+			//
+			// 	HIGH_LEFT_PWM(d);
+			// }
 
 			seq_index++;
 
-			//senoidal de 0.8A
+			//-- SENOIDALES --//
 			//para 10Hz
-			if (p_signal < &s_senoidal_1_5A[150])
-				p_signal++;
-			else
-				p_signal = s_senoidal_1_5A;
+			// if (p_signal < &s_senoidal_1_5A[150])
+			// 	p_signal++;
+			// else
+			// 	p_signal = s_senoidal_1_5A;
 			// if (p_signal < &s_senoidal_0_5A[150])
 			// 	p_signal++;
 			// else
@@ -414,10 +517,48 @@ int main(void)
 			// 	p_signal = s_senoidal_05A;
 
 			// //para 60Hz
-			// if ((p_signal+6) < &s_senoidal_05A[150])
+			// if ((p_signal+6) < &s_senoidal_1_5A[150])
 			// 	p_signal+=6;
 			// else
-			// 	p_signal = s_senoidal_05A;
+			// 	p_signal = s_senoidal_1_5A;
+
+			//-- CUADRADAS --//
+			//para 10Hz
+			// if (p_signal < &s_cuadrada_1_5A[150])
+			// 	p_signal++;
+			// else
+			// 	p_signal = s_cuadrada_1_5A;
+
+			//para 30Hz
+			// if ((p_signal+3) < &s_cuadrada_1_5A[150])
+			// 	p_signal+=3;
+			// else
+			// 	p_signal = s_cuadrada_1_5A;
+
+			// para 60Hz
+			// if ((p_signal+6) < &s_cuadrada_1_5A[150])
+			// 	p_signal+=6;
+			// else
+			// 	p_signal = s_cuadrada_1_5A;
+
+			//-- TRIANGULARES --//
+			//para 10Hz
+			// if (p_signal < &s_triangular_1_5A[150])
+			// 	p_signal++;
+			// else
+			// 	p_signal = s_triangular_1_5A;
+
+			//para 30Hz
+			// if ((p_signal+3) < &s_triangular_1_5A[150])
+			// 	p_signal+=3;
+			// else
+			// 	p_signal = s_triangular_1_5A;
+
+			// para 60Hz
+			if ((p_signal+6) < &s_triangular_1_5A[150])
+				p_signal+=6;
+			else
+				p_signal = s_triangular_1_5A;
 
 		}
 

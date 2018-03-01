@@ -22,6 +22,7 @@
 #define DUTY_50_PERCENT		500
 #define DUTY_95_PERCENT		950
 #define DUTY_100_PERCENT	1000
+#define DUTY_ALWAYS			(DUTY_100_PERCENT + 1)
 
 #define LOW_LEFT_PWM(X)		Update_TIM3_CH1(X)
 #define HIGH_LEFT_PWM(X)	Update_TIM3_CH2(X)
