@@ -111,6 +111,7 @@ SRC += ./src/stm32f0xx_it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
 SRC += ./src/uart.c
+SRC += ./src/signals.c
 
 
 

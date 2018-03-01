@@ -134,17 +134,6 @@ typedef enum
 #define DISCONNECT_VOLTAGE		1662		//equivale 160V 1.34V V_Sense
 #define GLITCH_VOLTAGE			636		//equivale a 100V 0.512V V_Sense
 
-//TIPO de descarga
-typedef enum
-{
-	INIT_DISCHARGE = 0,
-	NORMAL_DISCHARGE,
-	TAU_DISCHARGE,
-	FAST_DISCHARGE
-
-} discharge_state_t;
-
-
 
 
 /* Module Functions ------------------------------------------------------------*/
