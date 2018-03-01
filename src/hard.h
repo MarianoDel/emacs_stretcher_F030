@@ -36,7 +36,8 @@
 //GPIOA pin2	PROT Input
 #define PROTECT	((GPIOA->IDR & 0x0004) != 0)
 
-//GPIOA pin3	NC
+//GPIOA pin3	I_Sense_negado
+
 //GPIOA pin4	NC
 //GPIOA pin5	NC
 

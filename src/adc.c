@@ -93,7 +93,7 @@ void AdcConfig (void)
 
 #ifdef ADC_WITH_INT
 	//set channel selection
-	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1;
+	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_3;
 
 	//set interrupts
 	ADC1->IER |= ADC_IT_EOC;
@@ -121,9 +121,9 @@ void ADC1_COMP_IRQHandler (void)
 {
 	if (ADC1->ISR & ADC_IT_EOC)
 	{
-		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel2 en posicion 1
+		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel3 en posicion 2
 		{
-			p_channel = &adc_ch[1];
+			p_channel = &adc_ch[2];
 			*p_channel = ADC1->DR;
 			p_channel = &adc_ch[0];
 			seq_ready = 1;
@@ -137,7 +137,7 @@ void ADC1_COMP_IRQHandler (void)
 		else
 		{
 			*p_channel = ADC1->DR;		//
-			if (p_channel < &adc_ch[1])
+			if (p_channel < &adc_ch[2])
 				p_channel++;
 		}
 

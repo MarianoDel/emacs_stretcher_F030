@@ -24,7 +24,8 @@
 
 #ifdef ADC_WITH_INT
 #define Input_Signal		adc_ch[0]
-#define I_Sense	adc_ch[1]
+#define I_Sense			adc_ch[1]
+#define I_Sense_negado	adc_ch[2]
 #endif
 
 

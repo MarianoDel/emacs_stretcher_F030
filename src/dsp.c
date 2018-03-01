@@ -24,9 +24,8 @@ short d_last = 0;
 
 /* Module Definitions ---------------------------------------------------------*/
 //todos se dividen por 128
-#define KPV	64			// 1
-// #define KIV	64			// 0.5
-#define KIV	4			// 0.5
+#define KPV	857			// 6.7 desde python PI_zpk_KpKi.py
+#define KIV	844			// 6.6 desde python PI_zpk_KpKi.py
 #define KDV	0			// 0
 
 //todos se dividen por 128

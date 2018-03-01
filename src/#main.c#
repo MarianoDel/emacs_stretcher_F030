@@ -44,7 +44,7 @@ volatile unsigned char usart1_have_data = 0;
 
 // ------- Externals del o para el ADC -------
 #ifdef ADC_WITH_INT
-volatile unsigned short adc_ch[3];
+volatile unsigned short adc_ch[2];
 volatile unsigned char seq_ready = 0;
 #endif
 
@@ -93,43 +93,12 @@ const unsigned char s_trapecio [40] = {63, 126, 189, 255, 255, 255, 255, 255, 25
 													0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 													0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-const unsigned char s_cuadrada_08A [40] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+const unsigned char s_cuadrada [40] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 													255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 													0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 													0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 
-const unsigned short s_senoidal_0_5A [150] = {0,6,12,19,25,32,38,44,50,57,
-														68,74,80,85,91,96,101,106,110,
-														119,123,127,130,134,137,140,142,145,
-														149,150,152,153,154,154,154,154,154,
-														153,152,150,149,147,145,142,140,137,
-														130,127,123,119,115,110,106,101,96,
-														85,80,74,68,63,57,50,44,38,
-														25,19,12,6,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_senoidal_1_5A [150] ={0,19,38,58,77,96,115,134,152,171,
-														206,224,240,257,273,288,303,318,332,
-														358,370,381,392,402,412,420,428,435,
-														447,452,456,460,462,464,464,464,464,
-														460,456,452,447,442,435,428,420,412,
-														392,381,370,358,345,332,318,303,288,
-														257,240,224,206,189,171,152,134,115,
-														77,58,38,19,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
 #define SP_IOUT		135
 
 
@@ -167,7 +136,7 @@ int main(void)
 	short d = 0;
 	unsigned int zero_current_loc = 0;
 	unsigned short seq_index = 0;
-	unsigned short * p_signal;
+	unsigned char * p_signal;
 	unsigned char ciclo_descarga_rapida = 0;
 
 	main_state_t main_state = MAIN_INIT;
@@ -252,7 +221,7 @@ int main(void)
 //---------- Pruebas de Hardware --------//
 	AdcConfig();		//recordar habilitar sensor en adc.h
 
-	TIM_1_Init ();					//lo utilizo para synchro ADC muestras 1500Hz
+	TIM_1_Init ();					//lo utilizo para synchro ADC mustras 1500Hz
 	TIM_3_Init ();					//lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
 
 	//Update_TIM3_CH2 (10);
@@ -315,11 +284,7 @@ int main(void)
 	seq_ready = 0;
 	seq_index = 0;
 
-	// p_signal = s_trapecio;
-	// p_signal = s_cuadrada_08A;
-	// p_signal = s_cuadrada_05A;
-	// p_signal = s_senoidal_0_5A;
-	p_signal = s_senoidal_1_5A;
+	p_signal = s_trapecio;
 
 
 	//--- Pruebas lazo PID
@@ -387,38 +352,13 @@ int main(void)
 					LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
 				}
 
-				if (d > DUTY_95_PERCENT)		//por ahora no lo dejo pasar del 50%
-					d = DUTY_95_PERCENT;
+				if (d > DUTY_50_PERCENT)		//por ahora no lo dejo pasar del 50%
+					d = DUTY_50_PERCENT;
 
 				HIGH_LEFT_PWM(d);
 			}
 
 			seq_index++;
-
-			//senoidal de 0.8A
-			//para 10Hz
-			if (p_signal < &s_senoidal_1_5A[150])
-				p_signal++;
-			else
-				p_signal = s_senoidal_1_5A;
-			// if (p_signal < &s_senoidal_0_5A[150])
-			// 	p_signal++;
-			// else
-			// 	p_signal = s_senoidal_0_5A;
-
-			//
-			// //para 30Hz
-			// if ((p_signal+3) < &s_senoidal_05A[150])
-			// 	p_signal+=3;
-			// else
-			// 	p_signal = s_senoidal_05A;
-
-			// //para 60Hz
-			// if ((p_signal+6) < &s_senoidal_05A[150])
-			// 	p_signal+=6;
-			// else
-			// 	p_signal = s_senoidal_05A;
-
 		}
 
 
@@ -430,39 +370,28 @@ int main(void)
 		// 	Usart1Send(s_lcd);
 		// }
 
-		// if (!timer_standby)
-		// {
-		// 	timer_standby = 1;
-		//
-		// 	//para que *p_signal coincida con la medicion lo mando antes de actualizar
-		// 	// sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, *p_signal);
-		// 	// Usart1Send(s_lcd);
-		//
-		// 	//trapecio
-		// 	// if (p_signal < &s_trapecio[39])
-		// 	// 	p_signal++;
-		// 	// else
-		// 	// 	p_signal = s_trapecio;
-		//
-		// 	// //cuadrada de 0.5A
-		// 	// if (p_signal < &s_cuadrada_05A[39])
-		// 	// 	p_signal++;
-		// 	// else
-		// 	// 	p_signal = s_cuadrada_05A;
-		//
-		// 	// //cuadrada de 0.8A
-		// 	// if (p_signal < &s_cuadrada_08A[39])
-		// 	// 	p_signal++;
-		// 	// else
-		// 	// 	p_signal = s_cuadrada_08A;
-		//
-		// 	//senoidal de 0.8A
-		// 	if (p_signal < &s_senoidal_08A[39])
-		// 		p_signal++;
-		// 	else
-		// 		p_signal = s_senoidal_08A;
+		if (!timer_standby)
+		{
+			timer_standby = 50;
 
-		// }
+			//para que *p_signal coincida con la medicion lo mando antes de actualizar
+			sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, *p_signal);
+			Usart1Send(s_lcd);
+
+			//trapecio
+			// if (p_signal < &s_trapecio[39])
+			// 	p_signal++;
+			// else
+			// 	p_signal = s_trapecio;
+
+			//cuadrada
+			if (p_signal < &s_cuadrada[39])
+				p_signal++;
+			else
+				p_signal = s_cuadrada;
+
+
+		}
 	}
 
 
