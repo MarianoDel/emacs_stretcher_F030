@@ -46,6 +46,8 @@ typedef enum
 //--- Exported constants ---//
 
 //--- Exported macro ---//
+#define SIZEOF_SIGNALS		150
+
 
 //--- Exported functions ---//
 void SetSignalType (signal_type_t);

@@ -21,23 +21,7 @@ unsigned short * p_signal_running;
 short d = 0;
 
 //Signals Templates
-const unsigned short s_senoidal_0_5A [150] = {0,6,12,19,25,32,38,44,50,57,
-														68,74,80,85,91,96,101,106,110,
-														119,123,127,130,134,137,140,142,145,
-														149,150,152,153,154,154,154,154,154,
-														153,152,150,149,147,145,142,140,137,
-														130,127,123,119,115,110,106,101,96,
-														85,80,74,68,63,57,50,44,38,
-														25,19,12,6,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_senoidal_1_5A [150] ={0,19,38,58,77,96,115,134,152,171,
+const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] ={0,19,38,58,77,96,115,134,152,171,
 														206,224,240,257,273,288,303,318,332,
 														358,370,381,392,402,412,420,428,435,
 														447,452,456,460,462,464,464,464,464,
@@ -53,7 +37,7 @@ const unsigned short s_senoidal_1_5A [150] ={0,19,38,58,77,96,115,134,152,171,
 														0,0,0,0,0,0,0,0,0,
 														0,0,0,0,0,0,0,0,0};
 
-const unsigned short s_cuadrada_1_5A [150] = {465,465,465,465,465,465,465,465,465,465,
+const unsigned short s_cuadrada_1_5A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
 														465,465,465,465,465,465,465,465,465,
 														465,465,465,465,465,465,465,465,465,
 														465,465,465,465,465,465,465,465,465,
@@ -69,7 +53,7 @@ const unsigned short s_cuadrada_1_5A [150] = {465,465,465,465,465,465,465,465,46
 														0,0,0,0,0,0,0,0,0,
 														0,0,0,0,0,0,0,0,0};
 
-const unsigned short s_triangular_1_5A [150] = {0,6,12,18,24,31,37,43,49,55,
+const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43,49,55,
 														68,74,80,86,93,99,105,111,117,
 														130,136,142,148,155,161,167,173,179,
 														192,198,204,210,217,223,229,235,241,
@@ -122,7 +106,12 @@ void SetFrequency (frequency_t a)
 
 void SetPower (unsigned char a)
 {
-	signal_to_gen.power = a;
+	if (a > 100)
+		signal_to_gen.power = 100;
+	else if (a < 10)
+		signal_to_gen.power = 10;
+	else
+		signal_to_gen.power = a;
 }
 
 void GenerateSignal (void)
@@ -142,7 +131,8 @@ void GenerateSignal (void)
 
 			case NORMAL_DISCHARGE:
 
-				d = PID_roof (*p_signal_running, I_Sense, d);
+				d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+									I_Sense, d);
 
 				//reviso si necesito cambiar a descarga por tau
 				if (d < 0)
@@ -162,7 +152,8 @@ void GenerateSignal (void)
 
 			case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
 
-				d = PID_roof (*p_signal_running, I_Sense, d);	//OJO cambiar este pid
+				d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+				 					I_Sense, d);	//OJO cambiar este pid
 
 				//reviso si necesito cambiar a descarga rapida
 				if (d < 0)
@@ -187,7 +178,8 @@ void GenerateSignal (void)
 
 			case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
 
-				d = PID_roof (*p_signal_running, I_Sense_negado, d);	//OJO cambiar este pid
+				d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+									I_Sense_negado, d);	//OJO cambiar este pid
 
 				//reviso si necesito cambiar a descarga rapida
 				if (d < 0)
@@ -211,10 +203,10 @@ void GenerateSignal (void)
 		}
 
 		//-- TRIANGULARES --//
-		if ((p_signal_running + signal_to_gen.freq_table_inc) < &s_triangular_1_5A[150])
+		if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
 			p_signal_running += signal_to_gen.freq_table_inc;
 		else
-			p_signal_running = (unsigned short *) s_triangular_1_5A;
+			p_signal_running = p_signal;
 
 	}
 }

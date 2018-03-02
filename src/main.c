@@ -268,34 +268,11 @@ int main(void)
 
 	HIGH_LEFT_PWM(0);	//este es el que actua
 
-	// while (1)
-	// {
-	// 	if (seq_ready)
-	// 	{
-	// 		seq_ready = 0;
-	// 		d = PID_roof (SP_IOUT, I_Sense, d);
-	// 		if (d < 0)
-	// 			d = 0;
-	// 		else if (d > DUTY_50_PERCENT)		//por ahora no lo dejo pasar del 50%
-	// 			d = DUTY_50_PERCENT;
-	//
-	// 		seq_index++;
-	// 	}
-	//
-	// 	HIGH_LEFT_PWM(d);
-	//
-	// 	if (seq_index >= 1500)
-	// 	{
-	// 		seq_index = 0;
-	// 		sprintf(s_lcd, "I: %d d: %d s: %d\r\n", I_Sense, d, SP_IOUT);
-	// 		Usart1Send(s_lcd);
-	// 	}
-	// }
 
 	//prueba de nuevas rutinas
-	SetSignalType (TRIANGULAR_SIGNAL);
-	SetFrequency (TEN_HZ);
-	// void SetPower (unsigned char);
+	SetSignalType (SQUARE_SIGNAL);
+	SetFrequency (THIRTY_HZ);
+	SetPower (20);
 	// void GenerateSignal (void);
 
 
@@ -303,26 +280,6 @@ int main(void)
 	{
 		GenerateSignal();
 	}
-
-
-	//RAMPA
-	while (1)
-	{
-		LOW_LEFT_PWM(0);
-		LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
-		HIGH_RIGHT_PWM(0);
-
-		for (i = 0; i < DUTY_50_PERCENT; i++)
-		{
-			HIGH_LEFT_PWM(i);
-			Wait_ms(1);
-		}
-		HIGH_LEFT_PWM(0);
-		Wait_ms(DUTY_50_PERCENT);
-	}
-
-	//--- Fin Prueba de seniales PWM ---//
-
 
 
 	//--- Prueba ADC y synchro ---//
