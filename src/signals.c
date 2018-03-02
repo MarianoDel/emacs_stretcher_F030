@@ -202,7 +202,7 @@ void GenerateSignal (void)
 				break;
 		}
 
-		//-- TRIANGULARES --//
+		//-- Signal Update --//
 		if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
 			p_signal_running += signal_to_gen.freq_table_inc;
 		else

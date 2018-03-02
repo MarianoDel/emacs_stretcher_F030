@@ -273,12 +273,18 @@ int main(void)
 	SetSignalType (SQUARE_SIGNAL);
 	SetFrequency (THIRTY_HZ);
 	SetPower (20);
-	// void GenerateSignal (void);
-
 
 	while (1)
 	{
+
+
+		//Cosas que dependen de las muestras
 		GenerateSignal();
+
+		//Cosas que no dependen del estado del programa
+		UpdateCommunications();
+
+
 	}
 
 
