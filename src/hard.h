@@ -92,47 +92,6 @@ typedef enum
 } main_state_t;
 
 
-#define SIZEOF_DATA1	512
-#define SIZEOF_DATA		256
-#define SIZEOF_DATA512	SIZEOF_DATA1
-#define SIZEOF_DATA256	SIZEOF_DATA
-#define SIZEOF_BUFFTCP	SIZEOF_DATA
-
-
-//--- Temas con el sync de relay
-//#define TT_DELAYED_OFF		5600		//para relay metab
-//#define TT_DELAYED_ON		6560		//para relay metab
-#ifdef USE_WITH_SYNC
-#define TT_DELAYED_OFF		5260		//para relay placa redonda
-#define TT_DELAYED_ON		5400		//para relay placa redonda
-#else
-#define TT_DELAYED_OFF		6660		//para relay placa redonda
-#define TT_DELAYED_ON		7000		//para relay placa redonda
-
-#define ADC_THRESHOLD		1024		//threshold para deteccion de flanco
-#define ADC_NOISE				50		//threshold para ruido de ADC
-#endif
-#define TT_RELAY			60		//timeout de espera antes de pegar o despegar el relay por default
-
-
-//--- Temas de la medicion de potencia
-// #define KW			0.01013		//R originales en OPAMP
-// #define KW			0.01992		//con los cambos en las R y ajustado en 300W MUESTRA A
-// #define KW			0.02131		//midiendo desde 50 a 300W en MUESTRA A ajustado con python "ajuste_potencia.py" 19-12-17
-#define KW			0.02119		//midiendo a 300W en MUESTRA A con programa USE_ONLY_POWER_SENSE 19-12-17
-// #define MIN_SENSE_POWER		753		//15W con KW
-#define MIN_SENSE_POWER		1506		//30W con KW
-
-//--- Temas con la medicion de tension
-//MUESTRA A (BV)
-// #define GLITCH_VOLTAGE			764		//equivale a 100V 0.616V V_Sense
-// #define DISCONNECT_VOLTAGE		1786		//equivale 160V 1.44V V_Sense
-// #define CONNECT_VOLTAGE			2233		//equivale 180V 1.8V V_Sense
-
-//MUESTRA B KIRNO	15-12-2017
-#define CONNECT_VOLTAGE			2035		//equivale 180V 1.64V V_Sense
-#define DISCONNECT_VOLTAGE		1662		//equivale 160V 1.34V V_Sense
-#define GLITCH_VOLTAGE			636		//equivale a 100V 0.512V V_Sense
 
 
 

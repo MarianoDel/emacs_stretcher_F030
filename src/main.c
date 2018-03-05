@@ -40,8 +40,8 @@
 
 
 // ------- Externals del Puerto serie  -------
-volatile unsigned char tx1buff[SIZEOF_DATA];
-volatile unsigned char rx1buff[SIZEOF_DATA];
+// volatile unsigned char tx1buff[SIZEOF_DATA];
+// volatile unsigned char rx1buff[SIZEOF_DATA];
 volatile unsigned char usart1_have_data = 0;
 
 // ------- Externals del o para el ADC -------

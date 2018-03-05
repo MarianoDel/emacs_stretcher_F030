@@ -26,6 +26,8 @@
 //--- Private typedef ---//
 //--- Private define ---//
 //--- Private macro ---//
+#define SIZEOF_RXDATA 128
+#define SIZEOF_TXDATA 128
 
 //#define USE_USARTx_TIMEOUT
 
@@ -90,7 +92,7 @@ void USART1_IRQHandler(void)
 	{
 		dummy = USART1->RDR & 0x0FF;
 
-		if (prx1 < &rx1buff[SIZEOF_DATA])
+		if (prx1 < &rx1buff[SIZEOF_RXDATA])
 		{
 			if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
 			{
@@ -116,7 +118,7 @@ void USART1_IRQHandler(void)
 	{
 		if (USART1->ISR & USART_ISR_TXE)
 		{
-			if ((ptx1 < &tx1buff[SIZEOF_DATA]) && (ptx1 < ptx1_pckt_index))
+			if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
 			{
 				USART1->TDR = *ptx1;
 				ptx1++;
@@ -147,7 +149,7 @@ void Usart1Send (char * send)
 
 void Usart1SendUnsigned(unsigned char * send, unsigned char size)
 {
-	if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_DATA])
+	if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TXDATA])
 	{
 		memcpy((unsigned char *)ptx1_pckt_index, send, size);
 		ptx1_pckt_index += size;
@@ -185,7 +187,7 @@ void USART1Config(void)
 	GPIOA->AFR[1] = temp;
 
 	NVIC_EnableIRQ(USART1_IRQn);
-	NVIC_SetPriority(USART1_IRQn, 5);
+	NVIC_SetPriority(USART1_IRQn, 7);
 }
 
 

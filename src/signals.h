@@ -1,8 +1,27 @@
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __SIGNALS_H
 #define __SIGNALS_H
+#include "comm.h"		//para respuestas
 
 //--- Exported types ---//
+typedef enum {
+	TREATMENT_INIT_FIRST_TIME = 0,
+	TREATMENT_STANDBY,
+	TREATMENT_START_TO_GENERATE,
+	TREATMENT_GENERATING,
+	TREATMENT_GENERATING_WITH_SYNC,
+	TREATMENT_STOPPING
+
+} treatment_t;
+
+typedef enum {
+	ERROR_OK = 0,
+	ERROR_OVERCURRENT,
+	ERROR_NO_CURRENT,
+	ERROR_OVERTEMP
+
+} error_t;
+
 typedef enum {
 	SQUARE_SIGNAL = 0,
 	TRIANGULAR_SIGNAL,
@@ -54,6 +73,9 @@ void SetSignalType (signal_type_t);
 void SetFrequency (frequency_t);
 void SetPower (unsigned char);
 void GenerateSignal (void);
+resp_t AssertTreatmentParams (void);
+treatment_t GetTreatmentState (void);
+resp_t StartTreatment (void);
 
 #endif
 //--- End ---//

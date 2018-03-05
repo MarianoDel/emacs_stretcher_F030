@@ -12,6 +12,7 @@ extern volatile unsigned char seq_ready;
 extern volatile unsigned short adc_ch[];
 
 //--- VARIABLES GLOBALES ---//
+treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
 discharge_state_t discharge_state = INIT_DISCHARGE;
 
@@ -73,6 +74,53 @@ const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43
 //TODO: PONER UNA TRABA DE SETEOS PARANO CAMBIAR NADA CORRIENDO
 
 //--- FUNCIONES DEL MODULO ---//
+void TreatmentManager (void)
+{
+	switch (treatment_state)
+	{
+		case TREATMENT_INIT_FIRST_TIME:
+			if (AssertTreatmentParams() == resp_ok)
+				treatment_state = TREATMENT_STANDBY;
+			break;
+
+		case TREATMENT_STANDBY:
+			break;
+
+		case TREATMENT_START_TO_GENERATE:
+			break;
+
+		case TREATMENT_GENERATING:
+			break;
+
+		case TREATMENT_GENERATING_WITH_SYNC:
+			break;
+
+		case TREATMENT_STOPPING:
+			break;
+
+		default:
+			break;
+	}
+}
+
+treatment_t GetTreatmentState (void)
+{
+	return treatment_state;
+}
+
+resp_t StartTreatment (void)
+{
+	if (treatment_state == TREATMENT_STANDBY)
+	{
+		if (AssertTreatmentParams() == resp_ok)
+		{
+			treatment_state = TREATMENT_START_TO_GENERATE;
+			return resp_ok;
+		}
+	}
+	return resp_error;
+}
+
 void SetSignalType (signal_type_t a)
 {
 	//TODO: despues cargar directamente los k
@@ -112,6 +160,33 @@ void SetPower (unsigned char a)
 		signal_to_gen.power = 10;
 	else
 		signal_to_gen.power = a;
+}
+
+//verifica que se cumplan con todos los parametros para poder enviar una señal coherente
+resp_t AssertTreatmentParams (void)
+{
+	resp_t resp = resp_error;
+
+	if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
+		return resp;
+
+	if ((signal_to_gen.freq_table_inc != 1) ||
+			(signal_to_gen.freq_table_inc != 3) ||
+			(signal_to_gen.freq_table_inc != 6))
+			return resp;
+
+	if ((signal_to_gen.frequency != TEN_HZ) ||
+			(signal_to_gen.frequency != THIRTY_HZ) ||
+			(signal_to_gen.frequency != SIXTY_HZ))
+			return resp;
+
+	if ((signal_to_gen.signal != SQUARE_SIGNAL) ||
+			(signal_to_gen.signal != TRIANGULAR_SIGNAL) ||
+			(signal_to_gen.signal != SINUSOIDAL_SIGNAL))
+			return resp;
+
+	//TODO: revisar tambien puntero!!!!
+	return resp_ok;
 }
 
 void GenerateSignal (void)

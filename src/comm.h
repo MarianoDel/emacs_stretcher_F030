@@ -4,22 +4,22 @@
 
 
 //--- Exported types ---//
+
 //--- Exported constants ---//
+typedef enum {
+	resp_ok = 0,
+	resp_not_own,
+	resp_error
+
+} resp_t;
 
 //--- Exported macro ---//
-#define GET_PARAMS	10
-#define GET_TEMP 11
-#define GET_GAUSS 12
-#define CHANNEL	13
-#define SET_DISPLAY	14
-#define CMD_DISPLAY	15
-#define KEEP_ALIVE	16
-
-#define ERROR	50
 
 //--- Exported functions ---//
-unsigned char InterpretarMsg (char *);
-void AnalizarMsg (char *);
+void UpdateCommunications (void);
+unsigned char SerialProcess (void);
+unsigned char InterpretarMsg (void);
+void SetOwnChannel (unsigned char);
 
 
 #endif
