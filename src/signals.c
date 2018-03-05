@@ -224,7 +224,7 @@ resp_t AssertTreatmentParams (void)
 
 void SendAllConf (void)
 {
-	char b [SIZEOF_TXDATA];
+	char b [64];
 	sprintf(b, "channel: %s\n", GetOwnChannel());
 	Usart1Send(b);
 	sprintf(b, "signal: %d\n", signal_to_gen.signal);

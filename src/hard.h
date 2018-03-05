@@ -15,7 +15,8 @@
 // #define VER_1_1		//mismo pinout que VER_1_0
 
 //-------- Type of Program ----------------
-// #define DEBUG_ON
+#define ONLY_POWER_WITHOUT_MANAGEMENT
+// #define POWER_WITH_MANAGEMENT
 
 
 //-------- Type of Program and Features ----------------

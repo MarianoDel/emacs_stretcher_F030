@@ -271,66 +271,39 @@ int main(void)
 
 	//prueba de nuevas rutinas
 	SetOwnChannel (1);
-	SetSignalType (SQUARE_SIGNAL);
+	SetSignalType (SINUSOIDAL_SIGNAL);
 	SetFrequency (THIRTY_HZ);
-	SetPower (10);
+	SetPower (50);
 
+#ifdef ONLY_POWER_WITHOUT_MANAGEMENT
 	while (1)
 	{
+		//Cosas que dependen de las muestras
+		GenerateSignal();
+	}
+#endif
 
+#ifdef POWER_WITH_MANAGEMENT
+	while (1)
+	{
+		//este es el prograam principal, maneja a GenerateSignal()
+		TreatmentManager ();
 
 		//Cosas que dependen de las muestras
+		//se la puede llamar las veces que sea necesario y entre funciones, para acelerar
+		//la respuesta
 		GenerateSignal();
 
 		//Cosas que no dependen del estado del programa
 		UpdateCommunications();
 
+		// GenerateSignal();
 
 	}
-
-
-	//--- Prueba ADC y synchro ---//
-	// ADC1->CR |= ADC_CR_ADSTART;
-	// seq_ready = 0;
-	// seq_index = 0;
-	//
-	// while (1)
-	// {
-	// 	if (seq_ready)
-	// 	{
-	// 		seq_ready = 0;
-	// 		seq_index++;
-	// 	}
-	//
-	// 	if (seq_index > 10000)
-	// 	{
-	// 		seq_index = 0;
-	// 		sprintf(s_lcd, "ch0: %4d ch1: %4d\r\n", Input_Signal, I_Sense);
-	// 		Usart1Send(s_lcd);
-	// 		if (LED)
-	// 			LED_OFF;
-	// 		else
-	// 		  	LED_ON;
-	// 	}
-	// }
-	//--- Fin Prueba ADC y synchro ---//
-
-
-
-
-//---------- Inicio Programa de Produccion Redonda Basic --------//
-//--- FIN Programa de pruebas synchro de Relay -----
-//--- Programa de Redonda Basic - Produccion - -----
-
-//---------- Fin Programa de Produccion Redonda Basic--------//
-
-
+#endif
 	return 0;
 }
-
 //--- End of Main ---//
-
-
 
 
 

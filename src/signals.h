@@ -85,6 +85,7 @@ resp_t StartTreatment (void);
 error_t GetErrorStatus (void);
 void SetErrorStatus (error_t);
 void SendAllConf (void);
+void TreatmentManager (void);
 
 #endif
 //--- End ---//
