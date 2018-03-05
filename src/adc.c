@@ -128,10 +128,10 @@ void ADC1_COMP_IRQHandler (void)
 			p_channel = &adc_ch[0];
 			seq_ready = 1;
 
-			if (LED)
-				LED_OFF;
-			else
-				LED_ON;
+			// if (LED)
+			// 	LED_OFF;
+			// else
+			// 	LED_ON;
 
 		}
 		else

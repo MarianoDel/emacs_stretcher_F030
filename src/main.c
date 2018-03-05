@@ -270,9 +270,10 @@ int main(void)
 
 
 	//prueba de nuevas rutinas
+	SetOwnChannel (1);
 	SetSignalType (SQUARE_SIGNAL);
 	SetFrequency (THIRTY_HZ);
-	SetPower (20);
+	SetPower (10);
 
 	while (1)
 	{

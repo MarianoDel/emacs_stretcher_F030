@@ -67,6 +67,12 @@ typedef enum
 //--- Exported macro ---//
 #define SIZEOF_SIGNALS		150
 
+#define ERROR_OVERCURRENT_MASK	0x01
+#define ERROR_NO_CURRENT_MASK		0x02
+#define ERROR_OVERTEMP_MASK		0x04
+#define ERROR_FLUSH_MASK			0xff
+
+#define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
 //--- Exported functions ---//
 void SetSignalType (signal_type_t);
@@ -76,6 +82,9 @@ void GenerateSignal (void);
 resp_t AssertTreatmentParams (void);
 treatment_t GetTreatmentState (void);
 resp_t StartTreatment (void);
+error_t GetErrorStatus (void);
+void SetErrorStatus (error_t);
+void SendAllConf (void);
 
 #endif
 //--- End ---//

@@ -26,27 +26,20 @@
 //--- Private typedef ---//
 //--- Private define ---//
 //--- Private macro ---//
-#define SIZEOF_RXDATA 128
-#define SIZEOF_TXDATA 128
 
 //#define USE_USARTx_TIMEOUT
 
 
 
 //--- Externals variables ---//
-
-//--- Externals del GPS ---//
-extern volatile unsigned char usart1_mini_timeout;
-extern volatile unsigned char usart1_pckt_ready;
 extern volatile unsigned char usart1_have_data;
-
-extern volatile unsigned char tx1buff[];
-extern volatile unsigned char rx1buff[];
 
 //--- Private variables ---//
 volatile unsigned char * ptx1;
 volatile unsigned char * ptx1_pckt_index;
 volatile unsigned char * prx1;
+volatile unsigned char tx1buff[SIZEOF_TXDATA];
+volatile unsigned char rx1buff[SIZEOF_RXDATA];
 
 
 //Reception buffer.

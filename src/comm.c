@@ -4,7 +4,10 @@
 #include "signals.h"
 #include "uart.h"
 
+#include "utils.h"
+
 #include <string.h>
+#include <stdio.h>
 
 
 
@@ -18,15 +21,13 @@ extern unsigned char usart1_have_data;
 //globales de este modulo
 
 //strings de comienzo o lineas intermedias
-const char s_ch1 [] = {"ch1 "};
-const char s_ch2 [] = {"ch2 "};
-const char s_ch3 [] = {"ch3 "};
-const char s_chf [] = {"chf "};
-const char s_set_signal [] = {"signal "};
-const char s_frequency [] = {"freq "};
-const char s_power [] = {"power "};
-
-//strings de fines de linea
+const char s_ch1 [] = {"ch1"};
+const char s_ch2 [] = {"ch2"};
+const char s_ch3 [] = {"ch3"};
+const char s_chf [] = {"chf"};
+const char s_set_signal [] = {"signal"};
+const char s_frequency [] = {"frequency"};
+const char s_power [] = {"power"};
 const char s_square [] = {"square"};
 const char s_triangular [] = {"triangular"};
 const char s_sinusoidal [] = {"sinusoidal"};
@@ -37,6 +38,7 @@ const char s_start_treatment [] = {"start treatment"};
 const char s_stop_treatment [] = {"stop treatment"};
 const char s_status [] = {"status"};
 const char s_flush_errors [] = {"flush erros"};
+const char s_getall [] = {"get all conf"};
 
 
 char buffMessages [100];
@@ -54,6 +56,12 @@ void SetOwnChannel (unsigned char ch)
 		p_own_channel = s_ch3;
 
 }
+
+char * GetOwnChannel (void)
+{
+	return (char *) p_own_channel;
+}
+
 void UpdateCommunications (void)
 {
 	if (SerialProcess() > 2)	//si tiene algun dato significativo
@@ -81,6 +89,9 @@ resp_t InterpretarMsg (void)
 	resp_t resp = resp_not_own;
 	unsigned char broadcast = 0;
 	char * pStr = buffMessages;
+	unsigned short new_power = 0;
+	unsigned char decimales = 0;
+	char b [30];
 
 	//reviso canal propio o canal broadcast
 	if ((strncmp(pStr, p_own_channel, sizeof(s_chf) - 1) == 0) ||
@@ -89,7 +100,7 @@ resp_t InterpretarMsg (void)
 		resp = resp_ok;
 
 		//es broadcast?
-		if (*(pStr + 3) == 'f')
+		if (*(pStr + 2) == 'f')
 			broadcast = 1;
 
 		pStr += sizeof(s_chf);	//normalizo al mensaje, hay un espacio
@@ -129,8 +140,16 @@ resp_t InterpretarMsg (void)
 		{
 			pStr += sizeof(s_power);		//normalizo al payload, hay un espacio
 
-
-
+			//lo que viene son 2 o 3 bytes
+			decimales = StringIsANumber(pStr, &new_power);
+			if ((decimales > 1) && (decimales < 4))
+			{
+				SetPower (new_power);
+				// sprintf(b, "dec: %d, power: %d", decimales, new_power);
+				// Usart1Send(b);
+			}
+			else
+				resp = resp_error;
 		}
 
 		//-- Start Treatment
@@ -140,7 +159,6 @@ resp_t InterpretarMsg (void)
 			if (GetTreatmentState() == TREATMENT_STANDBY)
 			{
 				StartTreatment();
-				resp = resp_ok;
 			}
 			else
 				resp = resp_error;
@@ -153,19 +171,41 @@ resp_t InterpretarMsg (void)
 			switch (GetErrorStatus())
 			{
 				case ERROR_OK:
+					sprintf(b, "Manager status: %d\n", GetTreatmentState());
+					Usart1Send(b);
 					break;
 
 				case ERROR_OVERCURRENT:
+					Usart1Send("Error: Overcurrent\n");
 					break;
 
 				case ERROR_NO_CURRENT:
+					Usart1Send("Error: No current\n");
 					break;
 
 				case ERROR_OVERTEMP:
+					Usart1Send("Error: Overtemp\n");
 					break;
 
 			}
 		}
+
+		//-- Get All Configuration
+		if (strncmp(pStr, s_getall, sizeof(s_getall) - 1) == 0)
+		{
+			SendAllConf();
+		}
+
 	}	//fin if chx
+
+	if (!broadcast)
+	{
+		if (resp == resp_ok)
+			Usart1Send("OK\n");
+
+		if (resp == resp_error)
+			Usart1Send("NOK\n");
+	}
+
 	return resp;
 }

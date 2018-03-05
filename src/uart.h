@@ -35,6 +35,10 @@
 #define USARTx_RX_DISA	USARTx->CR1 &= 0xfffffffb
 #define USARTx_RX_ENA	USARTx->CR1 |= 0x04
 
+#define SIZEOF_RXDATA 128
+#define SIZEOF_TXDATA 128
+
+
 
 //--- Exported functions ---//
 unsigned char ReadUsart1Buffer (unsigned char *, unsigned short);

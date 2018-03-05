@@ -113,6 +113,7 @@ SRC += ./src/tim.c
 SRC += ./src/uart.c
 SRC += ./src/signals.c
 SRC += ./src/comm.c
+SRC += ./src/utils.c
 
 
 

@@ -5,6 +5,9 @@
 #include "dsp.h"
 #include "adc.h"
 
+#include "uart.h"
+#include <stdio.h>
+
 
 //--- VARIABLES EXTERNAS ---//
 //del ADC
@@ -15,6 +18,7 @@ extern volatile unsigned short adc_ch[];
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
 discharge_state_t discharge_state = INIT_DISCHARGE;
+unsigned char global_error = 0;
 
 unsigned short * p_signal;
 unsigned short * p_signal_running;
@@ -121,6 +125,35 @@ resp_t StartTreatment (void)
 	return resp_error;
 }
 
+error_t GetErrorStatus (void)
+{
+	error_t error = ERROR_OK;
+
+	if (global_error & ERROR_OVERTEMP_MASK)
+		error = ERROR_OVERTEMP;
+	else if (global_error & ERROR_OVERCURRENT_MASK)
+		error = ERROR_OVERCURRENT;
+	else if (global_error & ERROR_NO_CURRENT_MASK)
+		error = ERROR_NO_CURRENT;
+
+	return error;
+}
+
+void SetErrorStatus (error_t e)
+{
+	if (e == ERROR_FLUSH_MASK)
+		global_error = 0;
+	else
+	{
+		if (e == ERROR_OVERTEMP)
+			global_error |= ERROR_OVERTEMP_MASK;
+		if (e == ERROR_OVERCURRENT)
+			global_error |= ERROR_OVERCURRENT_MASK;
+		if (e == ERROR_NO_CURRENT)
+			global_error |= ERROR_NO_CURRENT_MASK;
+	}
+}
+
 void SetSignalType (signal_type_t a)
 {
 	//TODO: despues cargar directamente los k
@@ -188,6 +221,20 @@ resp_t AssertTreatmentParams (void)
 	//TODO: revisar tambien puntero!!!!
 	return resp_ok;
 }
+
+void SendAllConf (void)
+{
+	char b [SIZEOF_TXDATA];
+	sprintf(b, "channel: %s\n", GetOwnChannel());
+	Usart1Send(b);
+	sprintf(b, "signal: %d\n", signal_to_gen.signal);
+	Usart1Send(b);
+	sprintf(b, "freq: %d, inc: %d\n", signal_to_gen.frequency, signal_to_gen.freq_table_inc);
+	Usart1Send(b);
+	sprintf(b, "power: %d\n\n", signal_to_gen.power);
+	Usart1Send(b);
+}
+
 
 void GenerateSignal (void)
 {
