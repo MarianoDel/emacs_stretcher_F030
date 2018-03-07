@@ -111,32 +111,32 @@ resp_t InterpretarMsg (void)
 			pStr += sizeof(s_set_signal);		//normalizo al payload, hay un espacio
 
 			if (strncmp(pStr, s_square, sizeof(s_square) - 1) == 0)
-				SetSignalType (SQUARE_SIGNAL);
+				resp = SetSignalType (SQUARE_SIGNAL);
 			else if (strncmp(pStr, s_triangular, sizeof(s_triangular) - 1) == 0)
-				SetSignalType (TRIANGULAR_SIGNAL);
+				resp = SetSignalType (TRIANGULAR_SIGNAL);
 			else if (strncmp(pStr, s_sinusoidal, sizeof(s_sinusoidal) - 1) == 0)
-				SetSignalType (SINUSOIDAL_SIGNAL);
+				resp = SetSignalType (SINUSOIDAL_SIGNAL);
 			else
 				resp = resp_error;
 		}
 
 		//-- Frequency Setting
-		if (strncmp(pStr, s_frequency, sizeof(s_frequency) - 1) == 0)
+		else if (strncmp(pStr, s_frequency, sizeof(s_frequency) - 1) == 0)
 		{
 			pStr += sizeof(s_frequency);		//normalizo al payload, hay un espacio
 
 			if (strncmp(pStr, s_ten_hz, sizeof(s_ten_hz) - 1) == 0)
-				SetFrequency (TEN_HZ);
+				resp = SetFrequency (TEN_HZ);
 			else if (strncmp(pStr, s_thirty_hz, sizeof(s_thirty_hz) - 1) == 0)
-				SetFrequency (THIRTY_HZ);
+				resp = SetFrequency (THIRTY_HZ);
 			else if (strncmp(pStr, s_sixty_hz, sizeof(s_sixty_hz) - 1) == 0)
-				SetFrequency (SIXTY_HZ);
+				resp = SetFrequency (SIXTY_HZ);
 			else
 				resp = resp_error;
 		}
 
 		//-- Power Setting
-		if (strncmp(pStr, s_power, sizeof(s_power) - 1) == 0)
+		else if (strncmp(pStr, s_power, sizeof(s_power) - 1) == 0)
 		{
 			pStr += sizeof(s_power);		//normalizo al payload, hay un espacio
 
@@ -144,7 +144,7 @@ resp_t InterpretarMsg (void)
 			decimales = StringIsANumber(pStr, &new_power);
 			if ((decimales > 1) && (decimales < 4))
 			{
-				SetPower (new_power);
+				resp = SetPower (new_power);
 				// sprintf(b, "dec: %d, power: %d", decimales, new_power);
 				// Usart1Send(b);
 			}
@@ -153,19 +153,25 @@ resp_t InterpretarMsg (void)
 		}
 
 		//-- Start Treatment
-		if (strncmp(pStr, s_start_treatment, sizeof(s_start_treatment) - 1) == 0)
+		else if (strncmp(pStr, s_start_treatment, sizeof(s_start_treatment) - 1) == 0)
 		{
 			//se puede empezar
 			if (GetTreatmentState() == TREATMENT_STANDBY)
 			{
-				StartTreatment();
+				resp = StartTreatment();
 			}
 			else
 				resp = resp_error;
 		}
 
+		//-- Stop Treatment
+		else if (strncmp(pStr, s_stop_treatment, sizeof(s_stop_treatment) - 1) == 0)
+		{
+			StopTreatment();
+		}
+
 		//-- Status
-		if (strncmp(pStr, s_status, sizeof(s_status) - 1) == 0)
+		else if (strncmp(pStr, s_status, sizeof(s_status) - 1) == 0)
 		{
 			//reviso errores y envio
 			switch (GetErrorStatus())
@@ -191,10 +197,14 @@ resp_t InterpretarMsg (void)
 		}
 
 		//-- Get All Configuration
-		if (strncmp(pStr, s_getall, sizeof(s_getall) - 1) == 0)
+		else if (strncmp(pStr, s_getall, sizeof(s_getall) - 1) == 0)
 		{
 			SendAllConf();
 		}
+
+		//-- Ninguno de los anteriores
+		else
+			resp = resp_error;
 
 	}	//fin if chx
 

@@ -14,6 +14,9 @@
 extern volatile unsigned char seq_ready;
 extern volatile unsigned short adc_ch[];
 
+//del Main
+extern volatile unsigned short timer_signals;
+
 //--- VARIABLES GLOBALES ---//
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
@@ -25,7 +28,14 @@ unsigned short * p_signal_running;
 
 short d = 0;
 
+//-- para determinacion de soft overcurrent ------------
+unsigned short soft_overcurrent_max_current_in_cycles [SIZEOF_OVERCURRENT_BUFF];
+unsigned short soft_overcurrent_treshold = 0;
+unsigned short soft_overcurrent_index = 0;
+
+
 //Signals Templates
+#define I_MAX 400
 const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] ={0,19,38,58,77,96,115,134,152,171,
 														206,224,240,257,273,288,303,318,332,
 														358,370,381,392,402,412,420,428,435,
@@ -75,7 +85,6 @@ const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43
 														0,0,0,0,0,0,0,0,0};
 
 
-//TODO: PONER UNA TRABA DE SETEOS PARANO CAMBIAR NADA CORRIENDO
 
 //--- FUNCIONES DEL MODULO ---//
 void TreatmentManager (void)
@@ -83,23 +92,71 @@ void TreatmentManager (void)
 	switch (treatment_state)
 	{
 		case TREATMENT_INIT_FIRST_TIME:
+			HIGH_LEFT_PWM(0);
+			LOW_LEFT_PWM(0);
+			HIGH_RIGHT_PWM(0);
+			LOW_RIGHT_PWM(DUTY_ALWAYS);
+
 			if (AssertTreatmentParams() == resp_ok)
 				treatment_state = TREATMENT_STANDBY;
+
 			break;
 
 		case TREATMENT_STANDBY:
 			break;
 
-		case TREATMENT_START_TO_GENERATE:
+		case TREATMENT_START_TO_GENERATE:		//reviso una vez mas los parametros y no tener ningun error
+			if ((AssertTreatmentParams() == resp_ok) && (GetErrorStatus() == ERROR_OK))
+			{
+				discharge_state = INIT_DISCHARGE;
+
+				//cargo valor maximo de corriente para el soft_overcurrent
+				soft_overcurrent_treshold = 1.2 * I_MAX * signal_to_gen.power / 100;
+				soft_overcurrent_index = 0;
+
+				for (unsigned char i = 0; i < SIZEOF_OVERCURRENT_BUFF; i++)
+					soft_overcurrent_max_current_in_cycles[i] = 0;
+
+				if (signal_to_gen.synchro_needed)
+					treatment_state = TREATMENT_GENERATING_WITH_SYNC;
+				else
+					treatment_state = TREATMENT_GENERATING;
+			}
+			else
+			{
+				//error de parametros
+				treatment_state = TREATMENT_INIT_FIRST_TIME;
+			}
 			break;
 
 		case TREATMENT_GENERATING:
+			//Cosas que dependen de las muestras
+			//se la puede llamar las veces que sea necesario* y entre funciones, para acelerar
+			//la respuesta
+			GenerateSignal();
+
+			//soft current overload check
+			if (MAFilter8 (soft_overcurrent_max_current_in_cycles) > soft_overcurrent_treshold)
+			{
+				treatment_state = TREATMENT_STOPPING;
+				SetErrorStatus(ERROR_SOFT_OVERCURRENT);
+			}
 			break;
 
 		case TREATMENT_GENERATING_WITH_SYNC:
 			break;
 
 		case TREATMENT_STOPPING:
+			//10ms descarga rapida y a idle
+			HIGH_LEFT_PWM(0);
+			LOW_RIGHT_PWM(DUTY_ALWAYS);
+			timer_signals = 10;
+			treatment_state = TREATMENT_STOPPING2;
+			break;
+
+		case TREATMENT_STOPPING2:
+			if (!timer_signals)
+				treatment_state = TREATMENT_INIT_FIRST_TIME;
 			break;
 
 		default:
@@ -125,6 +182,12 @@ resp_t StartTreatment (void)
 	return resp_error;
 }
 
+void StopTreatment (void)
+{
+	if (treatment_state != TREATMENT_STANDBY)
+		treatment_state = TREATMENT_STOPPING;
+}
+
 error_t GetErrorStatus (void)
 {
 	error_t error = ERROR_OK;
@@ -135,6 +198,8 @@ error_t GetErrorStatus (void)
 		error = ERROR_OVERCURRENT;
 	else if (global_error & ERROR_NO_CURRENT_MASK)
 		error = ERROR_NO_CURRENT;
+	else if (global_error & ERROR_SOFT_OVERCURRENT_MASK)
+		error = ERROR_SOFT_OVERCURRENT;
 
 	return error;
 }
@@ -149,14 +214,20 @@ void SetErrorStatus (error_t e)
 			global_error |= ERROR_OVERTEMP_MASK;
 		if (e == ERROR_OVERCURRENT)
 			global_error |= ERROR_OVERCURRENT_MASK;
+		if (e == ERROR_SOFT_OVERCURRENT)
+			global_error |= ERROR_SOFT_OVERCURRENT_MASK;
 		if (e == ERROR_NO_CURRENT)
 			global_error |= ERROR_NO_CURRENT_MASK;
 	}
 }
 
-void SetSignalType (signal_type_t a)
+//TODO: PONER UNA TRABA DE SETEOS PARANO CAMBIAR NADA CORRIENDO
+
+resp_t SetSignalType (signal_type_t a)
 {
 	//TODO: despues cargar directamente los k
+	if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
+		return resp_error;
 
 	if (a == SQUARE_SIGNAL)
 		p_signal = (unsigned short *) s_cuadrada_1_5A;
@@ -169,10 +240,14 @@ void SetSignalType (signal_type_t a)
 
 	signal_to_gen.signal = a;
 
+	return resp_ok;
 }
 
-void SetFrequency (frequency_t a)
+resp_t SetFrequency (frequency_t a)
 {
+	if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
+		return resp_error;
+
 	if (a == TEN_HZ)
 		signal_to_gen.freq_table_inc = 1;
 
@@ -183,16 +258,23 @@ void SetFrequency (frequency_t a)
 		signal_to_gen.freq_table_inc = 6;
 
 	signal_to_gen.frequency = a;
+
+	return resp_ok;
 }
 
-void SetPower (unsigned char a)
+resp_t SetPower (unsigned char a)
 {
+	if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
+		return resp_error;
+
 	if (a > 100)
 		signal_to_gen.power = 100;
 	else if (a < 10)
 		signal_to_gen.power = 10;
 	else
 		signal_to_gen.power = a;
+
+	return resp_ok;
 }
 
 //verifica que se cumplan con todos los parametros para poder enviar una señal coherente
@@ -203,18 +285,18 @@ resp_t AssertTreatmentParams (void)
 	if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
 		return resp;
 
-	if ((signal_to_gen.freq_table_inc != 1) ||
-			(signal_to_gen.freq_table_inc != 3) ||
+	if ((signal_to_gen.freq_table_inc != 1) &&
+			(signal_to_gen.freq_table_inc != 3) &&
 			(signal_to_gen.freq_table_inc != 6))
 			return resp;
 
-	if ((signal_to_gen.frequency != TEN_HZ) ||
-			(signal_to_gen.frequency != THIRTY_HZ) ||
+	if ((signal_to_gen.frequency != TEN_HZ) &&
+			(signal_to_gen.frequency != THIRTY_HZ) &&
 			(signal_to_gen.frequency != SIXTY_HZ))
 			return resp;
 
-	if ((signal_to_gen.signal != SQUARE_SIGNAL) ||
-			(signal_to_gen.signal != TRIANGULAR_SIGNAL) ||
+	if ((signal_to_gen.signal != SQUARE_SIGNAL) &&
+			(signal_to_gen.signal != TRIANGULAR_SIGNAL) &&
 			(signal_to_gen.signal != SINUSOIDAL_SIGNAL))
 			return resp;
 
@@ -323,6 +405,13 @@ void GenerateSignal (void)
 				discharge_state = INIT_DISCHARGE;
 				break;
 		}
+
+		//-- Soft Overcurrent --//
+		soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
+		if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
+			soft_overcurrent_index++;
+		else
+			soft_overcurrent_index = 0;
 
 		//-- Signal Update --//
 		if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))

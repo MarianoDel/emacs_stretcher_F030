@@ -37,7 +37,8 @@
 
 
 //--- VARIABLES EXTERNAS ---//
-
+// ------- Externals de Timers  ------
+volatile unsigned short timer_signals = 0;
 
 // ------- Externals del Puerto serie  -------
 // volatile unsigned char tx1buff[SIZEOF_DATA];
@@ -286,13 +287,8 @@ int main(void)
 #ifdef POWER_WITH_MANAGEMENT
 	while (1)
 	{
-		//este es el prograam principal, maneja a GenerateSignal()
+		//este es el programa principal, maneja a GenerateSignal()
 		TreatmentManager ();
-
-		//Cosas que dependen de las muestras
-		//se la puede llamar las veces que sea necesario y entre funciones, para acelerar
-		//la respuesta
-		GenerateSignal();
 
 		//Cosas que no dependen del estado del programa
 		UpdateCommunications();
@@ -320,6 +316,9 @@ void TimingDelay_Decrement(void)
 
 	if (timer_meas)
 		timer_meas--;
+
+	if (timer_signals)
+		timer_signals--;
 
 	// //cuenta de a 1 minuto
 	// if (secs > 59999)	//pasaron 1 min
