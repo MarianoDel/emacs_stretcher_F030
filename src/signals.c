@@ -180,7 +180,7 @@ resp_t StartTreatment (void)
 {
 	if (treatment_state == TREATMENT_STANDBY)
 	{
-		if (AssertTreatmentParams() == resp_ok)
+		if ((AssertTreatmentParams() == resp_ok) && (GetErrorStatus() == ERROR_OK))
 		{
 			treatment_state = TREATMENT_START_TO_GENERATE;
 			return resp_ok;

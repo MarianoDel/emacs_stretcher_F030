@@ -68,7 +68,7 @@ volatile unsigned short take_temp_sample = 0;
 // parameters_typedef param_struct;
 
 //--- VARIABLES GLOBALES ---//
-
+volatile unsigned char int_counter = 0;
 
 // ------- de los timers -------
 volatile unsigned short wait_ms_var = 0;
@@ -92,8 +92,8 @@ volatile unsigned char minutes = 0;
 void TimingDelay_Decrement(void);
 
 // ------- para el LM311 -------
-extern void EXTI0_1_IRQHandler(void);
-
+// extern void EXTI0_1_IRQHandler(void);
+extern void EXTI2_3_IRQHandler(void);
 
 
 
@@ -288,6 +288,11 @@ int main(void)
 		//Cosas que no dependen del estado del programa
 		UpdateCommunications();
 
+		// if (PROTECT)
+		// 	LED_ON;
+		// else
+		// 	LED_OFF;
+
 		// GenerateSignal();
 
 	}
@@ -333,12 +338,27 @@ void TimingDelay_Decrement(void)
 
 }
 
-void EXTI0_1_IRQHandler(void)
+void EXTI2_3_IRQHandler(void)
 {
 
 	if(EXTI->PR & 0x00000004)	//Line2
 	{
-		Overcurrent_Shutdown();
+		//para pruebas
+		if (LED)
+			LED_OFF;
+		else
+			LED_ON;
+
+		if (int_counter < 100)
+			int_counter++;
+		else
+		{
+			int_counter = 0;
+			Usart1Send("100 ints\n");
+		}
+
+
+		// Overcurrent_Shutdown();
 
 		EXTI->PR |= 0x00000004;
 	}

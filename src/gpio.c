@@ -148,7 +148,8 @@ void GPIO_Config (void)
 #endif
 
 
-	//Interrupt en PB0
+#ifdef PROTECTION_WITH_INT
+	//Interrupt en PA2
 	if (!SYSCFG_CLK)
 		SYSCFG_CLK_ON;
 
@@ -158,8 +159,9 @@ void GPIO_Config (void)
 	EXTI->RTSR |= 0x00000004; 			//Pin 2 Interrupt line on rising edge
 	EXTI->FTSR |= 0x00000000; 			//Pin 2 Interrupt line on falling edge
 
-	NVIC_EnableIRQ(EXTI0_1_IRQn);
-	NVIC_SetPriority(EXTI0_1_IRQn, 3);
+	NVIC_EnableIRQ(EXTI2_3_IRQn);
+	NVIC_SetPriority(EXTI2_3_IRQn, 3);
+#endif
 
 #endif	//if version
 }

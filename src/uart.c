@@ -91,10 +91,10 @@ void USART1_IRQHandler(void)
 			{
 				*prx1 = '\0';
 				usart1_have_data = 1;
-				if (LED)
-					LED_OFF;
-				else
-					LED_ON;
+				// if (LED)
+				// 	LED_OFF;
+				// else
+				// 	LED_ON;
 
 			}
 			else

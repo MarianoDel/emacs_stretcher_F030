@@ -20,6 +20,8 @@
 
 
 //-------- Type of Program and Features ----------------
+#define PROTECTION_WITH_INT
+
 
 //-------- Kind of Reports Sended ----------------
 
