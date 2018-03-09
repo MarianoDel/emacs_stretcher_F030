@@ -68,11 +68,6 @@ volatile unsigned short take_temp_sample = 0;
 // parameters_typedef param_struct;
 
 //--- VARIABLES GLOBALES ---//
-volatile unsigned char current_excess = 0;
-
-
-
-
 
 
 // ------- de los timers -------
@@ -341,27 +336,11 @@ void TimingDelay_Decrement(void)
 void EXTI0_1_IRQHandler(void)
 {
 
-	if(EXTI->PR & 0x00000001)	//Line0
+	if(EXTI->PR & 0x00000004)	//Line2
 	{
-		LED_ON;
+		Overcurrent_Shutdown();
 
-		// if (CURRENT_LOOP)		//intenta corregir flux inbalance como lazo de corriente
-		// {
-		// 	//hubo interrupcion, me fijo que pwm estaba generando
-		// 	if (TIM1->CNT < TIM1->CCR1)
-		// 	{
-		// 		//generaba TIM1
-		//
-		// 	}
-		//
-		// }
-		UpdateTIMSync(0);
-
-
-		current_excess = 1;
-
-
-		EXTI->PR |= 0x00000001;
+		EXTI->PR |= 0x00000004;
 	}
 }
 

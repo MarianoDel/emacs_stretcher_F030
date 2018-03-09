@@ -173,13 +173,12 @@ resp_t InterpretarMsg (void)
 		//-- Status
 		else if (strncmp(pStr, s_status, sizeof(s_status) - 1) == 0)
 		{
-			//reviso errores y envio
 			switch (GetErrorStatus())
 			{
 				case ERROR_OK:
 					sprintf(b, "Manager status: %d\n", GetTreatmentState());
-					Usart1Send(b);
-					break;
+				  	Usart1Send(b);
+				  	break;
 
 				case ERROR_OVERCURRENT:
 					Usart1Send("Error: Overcurrent\n");
@@ -189,12 +188,41 @@ resp_t InterpretarMsg (void)
 					Usart1Send("Error: No current\n");
 					break;
 
+				case ERROR_SOFT_OVERCURRENT:
+					Usart1Send("Error: Soft Overcurrent\n");
+					break;
+
 				case ERROR_OVERTEMP:
 					Usart1Send("Error: Overtemp\n");
 					break;
 
 			}
 		}
+			//reviso errores y envio
+		// 	error_t e;
+		//
+		// 	e = GetErrorStatus();
+		// 	if (e == ERROR_OK)
+		// 	{
+		// 		sprintf(b, "Manager status: %d\n", GetTreatmentState());
+		// 		Usart1Send(b);
+		// 	}
+		// 	else
+		// 	{
+		// 		//tengo algun error, los mando en secuencias
+		// 		if (e & ERROR_OVERCURRENT)
+		// 			Usart1Send("Error: Overcurrent\n");
+		//
+		// 		if (e & ERROR_NO_CURRENT)
+		// 			Usart1Send("Error: No current\n");
+		//
+		// 		if (e & ERROR_SOFT_OVERCURRENT)
+		// 			Usart1Send("Error: Soft Overcurrent\n");
+		//
+		// 		if (e & ERROR_OVERTEMP)
+		// 			Usart1Send("Error: Overtemp\n");
+		// 	}
+		// }
 
 		//-- Get All Configuration
 		else if (strncmp(pStr, s_getall, sizeof(s_getall) - 1) == 0)

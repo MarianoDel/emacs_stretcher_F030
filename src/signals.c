@@ -6,6 +6,7 @@
 #include "adc.h"
 
 #include "uart.h"
+#include "gpio.h"
 #include <stdio.h>
 
 
@@ -35,7 +36,7 @@ unsigned short soft_overcurrent_index = 0;
 
 
 //Signals Templates
-#define I_MAX 400
+#define I_MAX 465
 const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] ={0,19,38,58,77,96,115,134,152,171,
 														206,224,240,257,273,288,303,318,332,
 														358,370,381,392,402,412,420,428,435,
@@ -114,6 +115,8 @@ void TreatmentManager (void)
 				soft_overcurrent_treshold = 1.2 * I_MAX * signal_to_gen.power / 100;
 				soft_overcurrent_index = 0;
 
+				EXTIOn();
+
 				for (unsigned char i = 0; i < SIZEOF_OVERCURRENT_BUFF; i++)
 					soft_overcurrent_max_current_in_cycles[i] = 0;
 
@@ -131,7 +134,7 @@ void TreatmentManager (void)
 
 		case TREATMENT_GENERATING:
 			//Cosas que dependen de las muestras
-			//se la puede llamar las veces que sea necesario* y entre funciones, para acelerar
+			//se la puede llamar las veces que sea necesario y entre funciones, para acelerar
 			//la respuesta
 			GenerateSignal();
 
@@ -156,7 +159,11 @@ void TreatmentManager (void)
 
 		case TREATMENT_STOPPING2:
 			if (!timer_signals)
+			{
 				treatment_state = TREATMENT_INIT_FIRST_TIME;
+				EXTIOff();
+			}
+
 			break;
 
 		default:
@@ -420,6 +427,22 @@ void GenerateSignal (void)
 			p_signal_running = p_signal;
 
 	}
+}
+
+//hubo sobrecorriente, me llaman desde la interrupcion
+void Overcurrent_Shutdown (void)
+{
+	//primero freno todo
+	HIGH_LEFT_PWM(0);
+	LOW_RIGHT_PWM(0);
+
+	//ahora aviso del error
+	SetErrorStatus(ERROR_OVERCURRENT);
+
+	//meto la generacion en Overcurrent
+	timer_signals = 10;
+	treatment_state = TREATMENT_STOPPING2;
+	// EXTIOff();
 }
 
 //--- end of file ---//

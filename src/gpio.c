@@ -159,19 +159,19 @@ void GPIO_Config (void)
 	EXTI->FTSR |= 0x00000000; 			//Pin 2 Interrupt line on falling edge
 
 	NVIC_EnableIRQ(EXTI0_1_IRQn);
-	NVIC_SetPriority(EXTI0_1_IRQn, 6);
+	NVIC_SetPriority(EXTI0_1_IRQn, 3);
 
-#endif
+#endif	//if version
 }
 
 inline void EXTIOff (void)
 {
-	EXTI->IMR &= ~0x00000001;
+	EXTI->IMR &= ~0x00000004;
 }
 
 inline void EXTIOn (void)
 {
-	EXTI->IMR |= 0x00000001;
+	EXTI->IMR |= 0x00000004;
 }
 
 //--- end of file ---//

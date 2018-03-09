@@ -93,6 +93,7 @@ error_t GetErrorStatus (void);
 void SetErrorStatus (error_t);
 void SendAllConf (void);
 void TreatmentManager (void);
+void Overcurrent_Shutdown (void);
 
 #endif
 //--- End ---//
