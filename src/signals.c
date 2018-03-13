@@ -163,10 +163,51 @@ void TreatmentManager (void)
 				treatment_state = TREATMENT_INIT_FIRST_TIME;
 				EXTIOff();
 			}
-
 			break;
 
 		default:
+			treatment_state = TREATMENT_INIT_FIRST_TIME;
+			break;
+	}
+}
+
+void TreatmentManager_IntSpeed (void)
+{
+	switch (treatment_state)
+	{
+		case TREATMENT_INIT_FIRST_TIME:
+			HIGH_LEFT_PWM(0);
+			LOW_LEFT_PWM(0);
+			HIGH_RIGHT_PWM(0);
+			LOW_RIGHT_PWM(DUTY_ALWAYS);
+
+			if (GetErrorStatus() == ERROR_OK)
+			{
+				discharge_state = INIT_DISCHARGE;
+				treatment_state = TREATMENT_GENERATING;
+				EXTIOn();
+			}
+			break;
+
+		case TREATMENT_GENERATING:
+			//Cosas que dependen de las muestras
+			//se la puede llamar las veces que sea necesario y entre funciones, para acelerar
+			//la respuesta
+			GenerateSignal();
+
+			break;
+
+		case TREATMENT_STOPPING2:		//aca lo manda directamente la int
+			if (!timer_signals)
+			{
+				treatment_state = TREATMENT_INIT_FIRST_TIME;
+				EXTIOff();
+				SetErrorStatus(ERROR_FLUSH_MASK);
+			}
+			break;
+
+		default:
+			treatment_state = TREATMENT_INIT_FIRST_TIME;
 			break;
 	}
 }

@@ -16,7 +16,8 @@
 
 //-------- Type of Program ----------------
 // #define ONLY_POWER_WITHOUT_MANAGEMENT
-#define POWER_WITH_MANAGEMENT
+// #define POWER_WITH_MANAGEMENT
+#define INT_SPEED_RESPONSE
 
 
 //-------- Type of Program and Features ----------------

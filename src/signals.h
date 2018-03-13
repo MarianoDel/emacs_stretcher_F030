@@ -94,6 +94,7 @@ void SetErrorStatus (error_t);
 void SendAllConf (void);
 void TreatmentManager (void);
 void Overcurrent_Shutdown (void);
+void TreatmentManager_IntSpeed (void);
 
 #endif
 //--- End ---//

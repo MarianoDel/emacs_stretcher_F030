@@ -265,11 +265,21 @@ int main(void)
 	HIGH_LEFT_PWM(0);	//este es el que actua
 
 
+#ifndef INT_SPEED_RESPONSE
 	//prueba de nuevas rutinas
 	SetOwnChannel (1);
 	SetSignalType (SINUSOIDAL_SIGNAL);
 	SetFrequency (THIRTY_HZ);
 	SetPower (50);
+#endif	
+
+#ifdef INT_SPEED_RESPONSE
+	//prueba de nuevas rutinas
+	SetOwnChannel (1);
+	SetSignalType (SINUSOIDAL_SIGNAL);
+	SetFrequency (THIRTY_HZ);
+	SetPower (100);
+#endif
 
 #ifdef ONLY_POWER_WITHOUT_MANAGEMENT
 	while (1)
@@ -297,6 +307,16 @@ int main(void)
 
 	}
 #endif
+
+#ifdef INT_SPEED_RESPONSE
+	while (1)
+	{
+		//solo genera la senial seteada mas arriba y en algun punto de la misma corta por int
+		TreatmentManager_IntSpeed ();
+
+	}
+#endif
+
 	return 0;
 }
 //--- End of Main ---//
@@ -349,16 +369,16 @@ void EXTI2_3_IRQHandler(void)
 		else
 			LED_ON;
 
-		if (int_counter < 100)
-			int_counter++;
-		else
-		{
-			int_counter = 0;
-			Usart1Send("100 ints\n");
-		}
+		// if (int_counter < 100)
+		// 	int_counter++;
+		// else
+		// {
+		// 	int_counter = 0;
+		// 	Usart1Send("100 ints\n");
+		// }
 
 
-		// Overcurrent_Shutdown();
+		Overcurrent_Shutdown();
 
 		EXTI->PR |= 0x00000004;
 	}
