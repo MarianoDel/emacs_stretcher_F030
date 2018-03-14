@@ -271,7 +271,7 @@ int main(void)
 	SetSignalType (SINUSOIDAL_SIGNAL);
 	SetFrequency (THIRTY_HZ);
 	SetPower (50);
-#endif	
+#endif
 
 #ifdef INT_SPEED_RESPONSE
 	//prueba de nuevas rutinas
@@ -364,9 +364,9 @@ void EXTI2_3_IRQHandler(void)
 	if(EXTI->PR & 0x00000004)	//Line2
 	{
 		//para pruebas
-		if (LED)
-			LED_OFF;
-		else
+		// if (LED)
+		// 	LED_OFF;
+		// else
 			LED_ON;
 
 		// if (int_counter < 100)

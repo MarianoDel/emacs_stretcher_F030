@@ -1,6 +1,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "signals.h"
+#include "hard.h"
+#include "stm32f0xx.h"
 #include "tim.h"
 #include "dsp.h"
 #include "adc.h"
@@ -185,6 +187,7 @@ void TreatmentManager_IntSpeed (void)
 			{
 				discharge_state = INIT_DISCHARGE;
 				treatment_state = TREATMENT_GENERATING;
+				LED_OFF;
 				EXTIOn();
 			}
 			break;
