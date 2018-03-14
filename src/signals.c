@@ -452,6 +452,9 @@ void GenerateSignal (void)
 				}
 				break;
 
+		case STOPPED_BY_INT:		//lo freno la interrupcion
+			break;
+
 			default:
 				discharge_state = INIT_DISCHARGE;
 				break;
@@ -476,9 +479,12 @@ void GenerateSignal (void)
 //hubo sobrecorriente, me llaman desde la interrupcion
 void Overcurrent_Shutdown (void)
 {
-	//primero freno todo
+	//primero freno todos los PWM
 	HIGH_LEFT_PWM(0);
 	LOW_RIGHT_PWM(0);
+
+	//freno la generacionde la senial
+	discharge_state = STOPPED_BY_INT;
 
 	//ahora aviso del error
 	SetErrorStatus(ERROR_OVERCURRENT);

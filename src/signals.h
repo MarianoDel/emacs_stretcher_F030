@@ -59,8 +59,7 @@ typedef enum
 	NORMAL_DISCHARGE,
 	TAU_DISCHARGE,
 	FAST_DISCHARGE,
-	STOP_ALL,
-	STOPPED
+	STOPPED_BY_INT
 
 } discharge_state_t;
 
