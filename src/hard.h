@@ -10,23 +10,39 @@
 
 
 //----------- Defines For Configuration -------------
+//----------- Harcode Direction -------------
+// #define OWN_CHANNEL 1
+// #define OWN_CHANNEL 2
+#define OWN_CHANNEL 3
+
 //----------- Hardware Board Version -------------
 #define VER_1_0
 // #define VER_1_1		//mismo pinout que VER_1_0
 
 //-------- Type of Program ----------------
-// #define ONLY_POWER_WITHOUT_MANAGEMENT
 // #define POWER_WITH_MANAGEMENT
+// #define ONLY_POWER_WITHOUT_MANAGEMENT
 #define INT_SPEED_RESPONSE
 
 
 //-------- Type of Program and Features ----------------
-#define PROTECTION_WITH_INT
+//Si utiliza la proteccion con la int para cortar la corriente
+#define USE_PROTECTION_WITH_INT
 
+//Si utiliza la proteccion de soft overcurrent o no
+// #define USE_SOFT_OVERCURRENT
+
+//Modo de uso de la USART (placa individual single - placa enganchada bus)
+// #define USART_IN_BUS
+#define USART_SINGLE
 
 //-------- Kind of Reports Sended ----------------
 
 //-------- Others Configurations depending on the formers ------------
+#ifdef USART_IN_BUS
+#define USART_TX_OUTPUT_OPEN_DRAIN
+#endif
+
 //-------- Hysteresis Conf ------------------------
 
 //-------- PWM Conf ------------------------
@@ -80,34 +96,39 @@
 //ESTADOS DEL PROGRAMA PRINCIPAL
 typedef enum
 {
-	MAIN_INIT = 0,
-	SYNCHRO_ADC,
-	SET_ZERO_CURRENT,
-	MAIN_OVERCURRENT,
-	SET_COUNTERS_AND_PHONE,
-  	LAMP_OFF,
-	START_GSM,
-	CONFIG_GSM,
-	WELCOME_GSM,
-	LAMP_ON,
-	GO_TO_MAINS_FAILURE,
-	MAINS_FAILURE
+    MAIN_INIT = 0,
+    SYNCHRO_ADC,
+    SET_ZERO_CURRENT,
+    MAIN_OVERCURRENT,
+    SET_COUNTERS_AND_PHONE,
+    LAMP_OFF,
+    START_GSM,
+    CONFIG_GSM,
+    WELCOME_GSM,
+    LAMP_ON,
+    GO_TO_MAINS_FAILURE,
+    MAINS_FAILURE
 
 } main_state_t;
 
+//ESTADOS DEL LED
+typedef enum
+{    
+    START_BLINKING = 0,
+    WAIT_TO_OFF,
+    WAIT_TO_ON,
+    WAIT_NEW_CYCLE
+} led_state_t;
 
-
+//Estados Externos de LED BLINKING
+#define LED_NO_BLINKING    0
+#define LED_TREATMENT_STANDBY    1
+#define LED_TREATMENT_GENERATING    2
 
 
 /* Module Functions ------------------------------------------------------------*/
-unsigned short GetHysteresis (unsigned char);
-unsigned char GetNew1to10 (unsigned short);
-void UpdateVGrid (void);
-void UpdateIGrid (void);
-unsigned short GetVGrid (void);
-unsigned short GetIGrid (void);
-unsigned short PowerCalc (unsigned short, unsigned short);
-unsigned short PowerCalcMean8 (unsigned short * p);
-void ShowPower (char *, unsigned short, unsigned int, unsigned int);
+void ChangeLed (unsigned char);
+void UpdateLed (void);
+
 
 #endif /* HARD_H_ */

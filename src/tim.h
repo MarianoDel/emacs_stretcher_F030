@@ -29,6 +29,9 @@
 #define LOW_RIGHT_PWM(X)	Update_TIM3_CH3(X)
 #define HIGH_RIGHT_PWM(X)	Update_TIM3_CH4(X)
 
+#define ENABLE_TIM3			TIM3->CR1 |= TIM_CR1_CEN;
+#define DISABLE_TIM3			TIM3->CR1 &= ~TIM_CR1_CEN;
+
 //--- Exported macro ---//
 #define RCC_TIM1_CLK 		(RCC->APB2ENR & 0x00000800)
 #define RCC_TIM1_CLK_ON 	RCC->APB2ENR |= 0x00000800

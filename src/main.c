@@ -39,6 +39,7 @@
 //--- VARIABLES EXTERNAS ---//
 // ------- Externals de Timers  ------
 volatile unsigned short timer_signals = 0;
+volatile unsigned short timer_led = 0;
 
 // ------- Externals del Puerto serie  -------
 // volatile unsigned char tx1buff[SIZEOF_DATA];
@@ -107,217 +108,232 @@ extern void EXTI2_3_IRQHandler(void);
 //------------------------------------------//
 int main(void)
 {
-	unsigned char i, ii;
+    unsigned char i, ii;
 
-	main_state_t main_state = MAIN_INIT;
+    main_state_t main_state = MAIN_INIT;
 
-	char s_lcd [100];		//lo agrando porque lo uso tambien para enviar SMS
+    char s_lcd [100];		//lo agrando porque lo uso tambien para enviar SMS
 
-	//GPIO Configuration.
-	GPIO_Config();
+    //GPIO Configuration.
+    GPIO_Config();
 
-	//ACTIVAR SYSTICK TIMER
-	if (SysTick_Config(48000))
-	{
-		while (1)	/* Capture error */
-		{
-			if (LED)
-				LED_OFF;
-			else
-				LED_ON;
+    //ACTIVAR SYSTICK TIMER
+    if (SysTick_Config(48000))
+    {
+        while (1)	/* Capture error */
+        {
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
 
-			for (i = 0; i < 255; i++)
-			{
-				asm (	"nop \n\t"
-						"nop \n\t"
-						"nop \n\t" );
-			}
-		}
-	}
+            for (i = 0; i < 255; i++)
+            {
+                asm (	"nop \n\t"
+                        "nop \n\t"
+                        "nop \n\t" );
+            }
+        }
+    }
 
-	//--- Prueba LED y JUMPER ---//
-	// while (1)
-	// {
-	// 	if (STOP_JUMPER)
-	// 	{
-	// 		LED_OFF;
-	// 	}
-	// 	else
-	// 	{
-	// 		if (LED)
-	// 			LED_OFF;
-	// 		else
-	// 		  	LED_ON;
-	//
-	// 		Wait_ms (250);
-	// 	}
-	// }
-	//--- Fin Prueba LED y JUMPER ---//
+    //--- Prueba LED y JUMPER ---//
+    // while (1)
+    // {
+    // 	if (STOP_JUMPER)
+    // 	{
+    // 		LED_OFF;
+    // 	}
+    // 	else
+    // 	{
+    // 		if (LED)
+    // 			LED_OFF;
+    // 		else
+    // 		  	LED_ON;
+    //
+    // 		Wait_ms (250);
+    // 	}
+    // }
+    //--- Fin Prueba LED y JUMPER ---//
 
 
 
-	//--- Welcome code ---//
-	LED_OFF;
+    //--- Welcome code ---//
+    LED_OFF;
 
-	USART1Config();
+    USART1Config();
 
-	//--- Prueba LED y USART TX ---//
-	// while (1)
-	// {
-	// 	Usart1Send((char *) (const char *) "ADC Sync getted!\r\n");
-	// 	if (LED)
-	// 		LED_OFF;
-	// 	else
-	// 		LED_ON;
-	//
-	// 	Wait_ms (1000);
-	// }
-	//--- Fin Prueba LED y USART TX---//
+    //--- Prueba LED y USART TX ---//
+    // while (1)
+    // {
+    // 	Usart1Send((char *) (const char *) "ADC Sync getted!\r\n");
+    // 	if (LED)
+    // 		LED_OFF;
+    // 	else
+    // 		LED_ON;
+    //
+    // 	Wait_ms (1000);
+    // }
+    //--- Fin Prueba LED y USART TX---//
 
-	//--- Prueba LED y USART RX ---//
-	// while (1)
-	// {
-	// 	if (usart1_have_data)
-	// 	{
-	// 		LED_ON;
-	// 		usart1_have_data = 0;
-	// 		ReadUsart1Buffer (s_lcd, SIZEOF_DATA);
-	// 		Usart1Send(s_lcd);
-	// 		LED_OFF;
-	// 	}
-	// }
-	//--- Fin Prueba LED y USART RX ---//
+    //--- Prueba LED y USART RX ---//
+    // while (1)
+    // {
+    // 	if (usart1_have_data)
+    // 	{
+    // 		LED_ON;
+    // 		usart1_have_data = 0;
+    // 		ReadUsart1Buffer (s_lcd, SIZEOF_DATA);
+    // 		Usart1Send(s_lcd);
+    // 		LED_OFF;
+    // 	}
+    // }
+    //--- Fin Prueba LED y USART RX ---//
 
 //---------- Pruebas de Hardware --------//
-	AdcConfig();		//recordar habilitar sensor en adc.h
+    AdcConfig();		//recordar habilitar sensor en adc.h
 
-	TIM_1_Init ();					//lo utilizo para synchro ADC muestras 1500Hz
-	TIM_3_Init ();					//lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
+    TIM_1_Init ();					//lo utilizo para synchro ADC muestras 1500Hz
+    TIM_3_Init ();					//lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
 
-	//Update_TIM3_CH2 (10);
-	// TIM3->CCR3 = 1000;
-	// TIM3->ARR = 6858;
+    //Update_TIM3_CH2 (10);
+    // TIM3->CCR3 = 1000;
+    // TIM3->ARR = 6858;
 
-	// while (1);
+    // while (1);
 
-	//--- Prueba Pines PWM ---//
-	// EXTIOff ();
-	// while (1)
-	// {
-	// 	for (d = 0; d < DUTY_100_PERCENT; d++)
-	// 	{
-	// 		Update_TIM3_CH1 (d);
-	// 		Update_TIM3_CH2 (d);
-	// 		Update_TIM3_CH3 (d);
-	// 		Update_TIM3_CH4 (d);
-	//
-	// 		Wait_ms(2);
-	// 	}
-	// }
-	//--- Fin Prueba Pines PWM ---//
+    //--- Prueba Pines PWM ---//
+    // EXTIOff ();
+    // while (1)
+    // {
+    // 	for (d = 0; d < DUTY_100_PERCENT; d++)
+    // 	{
+    // 		Update_TIM3_CH1 (d);
+    // 		Update_TIM3_CH2 (d);
+    // 		Update_TIM3_CH3 (d);
+    // 		Update_TIM3_CH4 (d);
+    //
+    // 		Wait_ms(2);
+    // 	}
+    // }
+    //--- Fin Prueba Pines PWM ---//
 
-	//--- Prueba de seniales PWM ---//
-	//CUADRADA baja
-	// LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
-	// HIGH_RIGHT_PWM(0);
-	//
-	// while (1)
-	// {
-	// 	HIGH_LEFT_PWM(0);
-	// 	LOW_LEFT_PWM(DUTY_50_PERCENT);
-	//
-	// 	Wait_ms(20);
-	//
-	// 	LOW_LEFT_PWM(0);
-	//
-	// 	Wait_ms(20);
-	// }
+    //--- Prueba de seniales PWM ---//
+    //CUADRADA baja
+    // LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
+    // HIGH_RIGHT_PWM(0);
+    //
+    // while (1)
+    // {
+    // 	HIGH_LEFT_PWM(0);
+    // 	LOW_LEFT_PWM(DUTY_50_PERCENT);
+    //
+    // 	Wait_ms(20);
+    //
+    // 	LOW_LEFT_PWM(0);
+    //
+    // 	Wait_ms(20);
+    // }
 
-	// //CUADRADA alta derecha
-	// while (1)
-	// {
-	// 	HIGH_LEFT_PWM(0);
-	// 	LOW_LEFT_PWM(DUTY_100_PERCENT+1);
-	//
-	// 	LOW_RIGHT_PWM(0);
-	// 	HIGH_RIGHT_PWM(DUTY_50_PERCENT);
-	//
-	// 	Wait_ms(20);
-	//
-	// 	HIGH_RIGHT_PWM(0);
-	// 	Wait_ms(20);
-	// }
+    // //CUADRADA alta derecha
+    // while (1)
+    // {
+    // 	HIGH_LEFT_PWM(0);
+    // 	LOW_LEFT_PWM(DUTY_100_PERCENT+1);
+    //
+    // 	LOW_RIGHT_PWM(0);
+    // 	HIGH_RIGHT_PWM(DUTY_50_PERCENT);
+    //
+    // 	Wait_ms(20);
+    //
+    // 	HIGH_RIGHT_PWM(0);
+    // 	Wait_ms(20);
+    // }
 
-	//CUADRADA alta izquierda
-	//--- Prueba ADC y synchro ---//
-	ADC1->CR |= ADC_CR_ADSTART;	//1500Hz con TIM1
-	seq_ready = 0;
+    //CUADRADA alta izquierda
+    //--- Prueba ADC y synchro ---//
+    ADC1->CR |= ADC_CR_ADSTART;	//1500Hz con TIM1
+    seq_ready = 0;
+
+    for (i = 0; i < (3 * OWN_CHANNEL); i++)
+    {
+        LED_ON;
+        Wait_ms(200);
+        LED_OFF;
+        Wait_ms(200);
+    }
+    Wait_ms(2000);
+        
 
 
+    //--- Pruebas lazo PID
+    //-- primero preparo el puente H segun la funcion que busque
+    LOW_LEFT_PWM(0);
+    HIGH_RIGHT_PWM(0);
+    LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
 
-
-	//--- Pruebas lazo PID
-	//-- primero preparo el puente H segun la funcion que busque
-	LOW_LEFT_PWM(0);
-	HIGH_RIGHT_PWM(0);
-	LOW_RIGHT_PWM(DUTY_100_PERCENT+1);
-
-	HIGH_LEFT_PWM(0);	//este es el que actua
+    HIGH_LEFT_PWM(0);	//este es el que actua
 
 
 #ifndef INT_SPEED_RESPONSE
-	//prueba de nuevas rutinas
-	SetOwnChannel (1);
-	SetSignalType (SINUSOIDAL_SIGNAL);
-	SetFrequency (THIRTY_HZ);
-	SetPower (50);
+    //prueba de nuevas rutinas
+    SetOwnChannel (OWN_CHANNEL);
+    SetSignalType (SINUSOIDAL_SIGNAL);
+    SetFrequency (THIRTY_HZ);
+    SetPower (50);
 #endif
 
 #ifdef INT_SPEED_RESPONSE
-	//prueba de nuevas rutinas
-	SetOwnChannel (1);
-	SetSignalType (SINUSOIDAL_SIGNAL);
-	SetFrequency (THIRTY_HZ);
-	SetPower (100);
+    //prueba de nuevas rutinas
+    // SetOwnChannel (OWN_CHANNEL);
+    // SetSignalType (SINUSOIDAL_SIGNAL);
+    // SetFrequency (THIRTY_HZ);
+    // SetPower (100);
+
+    SetOwnChannel (OWN_CHANNEL);
+    SetSignalType (TRIANGULAR_SIGNAL);
+    SetFrequency (TEN_HZ);
+    SetPower (100);
 #endif
 
 #ifdef ONLY_POWER_WITHOUT_MANAGEMENT
-	while (1)
-	{
-		//Cosas que dependen de las muestras
-		GenerateSignal();
-	}
+    while (1)
+    {
+        //Cosas que dependen de las muestras
+        GenerateSignal();
+    }
 #endif
 
 #ifdef POWER_WITH_MANAGEMENT
-	while (1)
-	{
-		//este es el programa principal, maneja a GenerateSignal()
-		TreatmentManager ();
+    while (1)
+    {
+        //este es el programa principal, maneja a GenerateSignal()
+        TreatmentManager ();
 
-		//Cosas que no dependen del estado del programa
-		UpdateCommunications();
+        //Cosas que no dependen del estado del programa
+        UpdateCommunications();
 
-		// if (PROTECT)
-		// 	LED_ON;
-		// else
-		// 	LED_OFF;
+        UpdateLed();
 
-		// GenerateSignal();
+        // if (PROTECT)
+        // 	LED_ON;
+        // else
+        // 	LED_OFF;
 
-	}
+        // GenerateSignal();
+
+    }
 #endif
 
 #ifdef INT_SPEED_RESPONSE
-	while (1)
-	{
-		//solo genera la senial seteada mas arriba y en algun punto de la misma corta por int
-		TreatmentManager_IntSpeed ();
+    while (1)
+    {
+        //solo genera la senial seteada mas arriba y en algun punto de la misma corta por int
+        TreatmentManager_IntSpeed ();
 
-	}
+    }
 #endif
 
-	return 0;
+    return 0;
 }
 //--- End of Main ---//
 
@@ -325,35 +341,37 @@ int main(void)
 
 void TimingDelay_Decrement(void)
 {
-	if (wait_ms_var)
-		wait_ms_var--;
+    if (wait_ms_var)
+        wait_ms_var--;
 
-	if (timer_standby)
-		timer_standby--;
+    if (timer_standby)
+        timer_standby--;
 
-	if (take_temp_sample)
-		take_temp_sample--;
+    if (take_temp_sample)
+        take_temp_sample--;
 
-	if (timer_meas)
-		timer_meas--;
+    if (timer_meas)
+        timer_meas--;
 
-	if (timer_signals)
-		timer_signals--;
+    if (timer_signals)
+        timer_signals--;
 
-	// //cuenta de a 1 minuto
-	// if (secs > 59999)	//pasaron 1 min
-	// {
-	// 	minutes++;
-	// 	secs = 0;
-	// }
-	// else
-	// 	secs++;
-	//
-	// if (minutes > 60)
-	// {
-	// 	hours++;
-	// 	minutes = 0;
-	// }
+    if (timer_led)
+        timer_led--;
+    // //cuenta de a 1 minuto
+    // if (secs > 59999)	//pasaron 1 min
+    // {
+    // 	minutes++;
+    // 	secs = 0;
+    // }
+    // else
+    // 	secs++;
+    //
+    // if (minutes > 60)
+    // {
+    // 	hours++;
+    // 	minutes = 0;
+    // }
 
 
 }
