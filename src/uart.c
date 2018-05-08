@@ -78,58 +78,61 @@ unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned short max_len)
 
 void USART1_IRQHandler(void)
 {
-	unsigned char dummy;
+    unsigned char dummy;
 
-	/* USART in mode Receiver --------------------------------------------------*/
-	if (USART1->ISR & USART_ISR_RXNE)
-	{
-		dummy = USART1->RDR & 0x0FF;
+    /* USART in mode Receiver --------------------------------------------------*/
+    if (USART1->ISR & USART_ISR_RXNE)
+    {
+        dummy = USART1->RDR & 0x0FF;
 
-		if (prx1 < &rx1buff[SIZEOF_RXDATA])
-		{
-			if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
-			{
-				*prx1 = '\0';
-				usart1_have_data = 1;
-				// if (LED)
-				// 	LED_OFF;
-				// else
-				// 	LED_ON;
+        if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+        {
+            if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
+            {
+                *prx1 = '\0';
+                usart1_have_data = 1;
+                // if (LED)
+                // 	LED_OFF;
+                // else
+                // 	LED_ON;
 
-			}
-			else
-			{
-				*prx1 = dummy;
-				prx1++;
-			}
-		}
-	}
+            }
+            else
+            {
+                *prx1 = dummy;
+                prx1++;
+            }
+        }
+        else
+            prx1 = rx1buff;    //soluciona problema bloqueo con garbage
 
-	/* USART in mode Transmitter -------------------------------------------------*/
+    }
 
-	if (USART1->CR1 & USART_CR1_TXEIE)
-	{
-		if (USART1->ISR & USART_ISR_TXE)
-		{
-			if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
-			{
-				USART1->TDR = *ptx1;
-				ptx1++;
-			}
-			else
-			{
-				ptx1 = tx1buff;
-				ptx1_pckt_index = tx1buff;
-				USART1->CR1 &= ~USART_CR1_TXEIE;
-			}
-		}
-	}
+    /* USART in mode Transmitter -------------------------------------------------*/
 
-	if ((USART1->ISR & USART_ISR_ORE) || (USART1->ISR & USART_ISR_NE) || (USART1->ISR & USART_ISR_FE))
-	{
-		USART1->ICR |= 0x0e;
-		dummy = USART1->RDR;
-	}
+    if (USART1->CR1 & USART_CR1_TXEIE)
+    {
+        if (USART1->ISR & USART_ISR_TXE)
+        {
+            if ((ptx1 < &tx1buff[SIZEOF_TXDATA]) && (ptx1 < ptx1_pckt_index))
+            {
+                USART1->TDR = *ptx1;
+                ptx1++;
+            }
+            else
+            {
+                ptx1 = tx1buff;
+                ptx1_pckt_index = tx1buff;
+                USART1->CR1 &= ~USART_CR1_TXEIE;
+            }
+        }
+    }
+
+    if ((USART1->ISR & USART_ISR_ORE) || (USART1->ISR & USART_ISR_NE) || (USART1->ISR & USART_ISR_FE))
+    {
+        USART1->ICR |= 0x0e;
+        dummy = USART1->RDR;
+    }
 }
 
 void Usart1Send (char * send)

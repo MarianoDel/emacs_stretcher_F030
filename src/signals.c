@@ -204,43 +204,47 @@ void TreatmentManager_IntSpeed (void)
 {
     switch (treatment_state)
     {
-    case TREATMENT_INIT_FIRST_TIME:
-        HIGH_LEFT_PWM(0);
-        LOW_LEFT_PWM(0);
-        HIGH_RIGHT_PWM(0);
-        LOW_RIGHT_PWM(DUTY_ALWAYS);
+        case TREATMENT_INIT_FIRST_TIME:
+            if (!timer_signals)
+            {
+                HIGH_LEFT_PWM(0);
+                LOW_LEFT_PWM(0);
+                HIGH_RIGHT_PWM(0);
+                LOW_RIGHT_PWM(DUTY_ALWAYS);
 
-        if (GetErrorStatus() == ERROR_OK)
-        {
-            discharge_state = INIT_DISCHARGE;
-            treatment_state = TREATMENT_GENERATING;
-            LED_OFF;
-            EXTIOn();
-        }
-        break;
+                if (GetErrorStatus() == ERROR_OK)
+                {
+                    discharge_state = INIT_DISCHARGE;
+                    treatment_state = TREATMENT_GENERATING;
+                    LED_OFF;
+                    EXTIOn();
+                }
+            }
+            break;
 
-    case TREATMENT_GENERATING:
-        //Cosas que dependen de las muestras
-        //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
-        //la respuesta
-        GenerateSignal();
+        case TREATMENT_GENERATING:
+            //Cosas que dependen de las muestras
+            //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
+            //la respuesta
+            GenerateSignal();
 
-        break;
+            break;
 
-    case TREATMENT_STOPPING2:		//aca lo manda directamente la int
-        if (!timer_signals)
-        {
+        case TREATMENT_STOPPING2:		//aca lo manda directamente la int
+            if (!timer_signals)
+            {
+                treatment_state = TREATMENT_INIT_FIRST_TIME;
+                EXTIOff();
+                ENABLE_TIM3;
+                LED_OFF;
+                SetErrorStatus(ERROR_FLUSH_MASK);
+                timer_signals = 30;    //30ms mas de demora despues de int
+            }
+            break;
+
+        default:
             treatment_state = TREATMENT_INIT_FIRST_TIME;
-            EXTIOff();
-            ENABLE_TIM3;
-            LED_OFF;
-            SetErrorStatus(ERROR_FLUSH_MASK);
-        }
-        break;
-
-    default:
-        treatment_state = TREATMENT_INIT_FIRST_TIME;
-        break;
+            break;
     }
 }
 
@@ -301,7 +305,7 @@ void SetErrorStatus (error_t e)
     }
 }
 
-//TODO: PONER UNA TRABA DE SETEOS PARANO CAMBIAR NADA CORRIENDO
+//TODO: PONER UNA TRABA DE SETEOS PARA NO CAMBIAR NADA CORRIENDO
 
 resp_t SetSignalType (signal_type_t a)
 {
@@ -312,7 +316,7 @@ resp_t SetSignalType (signal_type_t a)
     if (a == SQUARE_SIGNAL)
         p_signal = (unsigned short *) s_cuadrada_1_5A;
 
-#ifdef USE_PROTECTION_WITH_INT
+#if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
     if (a == TRIANGULAR_SIGNAL)
         p_signal = (unsigned short *) s_triangular_6A;
 #else
@@ -402,7 +406,7 @@ void SendAllConf (void)
     Usart1Send(b);
 }
 
-//la llama el manager para generar las seniales, si no esta el juper de proteccion genera
+//la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
 //sino espera a que sea quitado
 void GenerateSignal (void)
 {
