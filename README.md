@@ -1,8 +1,6 @@
 # atom_stretcher_magneto
 Etapa de potencia stretcher para magneto
-
 con micro STM32F030K6T6
-
 
 #antes de empezar revisar seleccion del micro
 stm32f0_flash.cfg		//work area size y flash image
