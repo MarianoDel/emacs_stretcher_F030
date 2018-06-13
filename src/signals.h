@@ -3,27 +3,8 @@
 #define __SIGNALS_H
 #include "comm.h"		//para respuestas
 
+
 //--- Exported types ---//
-typedef enum {
-	TREATMENT_INIT_FIRST_TIME = 0,
-	TREATMENT_STANDBY,
-	TREATMENT_START_TO_GENERATE,
-	TREATMENT_GENERATING,
-	TREATMENT_GENERATING_WITH_SYNC,
-	TREATMENT_STOPPING,
-	TREATMENT_STOPPING2
-
-} treatment_t;
-
-typedef enum {
-	ERROR_OK = 0,
-	ERROR_OVERCURRENT,
-	ERROR_NO_CURRENT,
-	ERROR_SOFT_OVERCURRENT,
-	ERROR_OVERTEMP
-
-} error_t;
-
 typedef enum {
 	SQUARE_SIGNAL = 0,
 	TRIANGULAR_SIGNAL,
@@ -51,6 +32,27 @@ typedef struct {
 	unsigned short kderv;
 
 } signals_struct_t;
+
+typedef enum {
+	TREATMENT_INIT_FIRST_TIME = 0,
+	TREATMENT_STANDBY,
+	TREATMENT_START_TO_GENERATE,
+	TREATMENT_GENERATING,
+	TREATMENT_GENERATING_WITH_SYNC,
+	TREATMENT_STOPPING,
+	TREATMENT_STOPPING2
+
+} treatment_t;
+
+typedef enum {
+	ERROR_OK = 0,
+	ERROR_OVERCURRENT,
+	ERROR_NO_CURRENT,
+	ERROR_SOFT_OVERCURRENT,
+	ERROR_OVERTEMP
+
+} error_t;
+
 
 //TIPO de descarga y estado de signal
 typedef enum
@@ -80,6 +82,7 @@ typedef enum
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
 //--- Exported functions ---//
+// resp_t SetSignalType (signals_struct_t *, signal_type_t);
 resp_t SetSignalType (signal_type_t);
 resp_t SetFrequency (frequency_t);
 resp_t SetPower (unsigned char);

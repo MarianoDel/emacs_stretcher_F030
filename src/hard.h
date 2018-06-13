@@ -16,13 +16,13 @@
 #define OWN_CHANNEL 3
 
 //----------- Hardware Board Version -------------
-#define VER_1_0
-// #define VER_1_1		//mismo pinout que VER_1_0
+// #define VER_1_0
+#define VER_1_1		//mismo pinout que VER_1_0
 
 //-------- Type of Program ----------------
-// #define POWER_WITH_MANAGEMENT
+#define POWER_WITH_MANAGEMENT
 // #define ONLY_POWER_WITHOUT_MANAGEMENT
-#define INT_SPEED_RESPONSE
+// #define INT_SPEED_RESPONSE
 
 
 //-------- Type of Program and Features ----------------
@@ -33,8 +33,8 @@
 // #define USE_SOFT_OVERCURRENT
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
-// #define USART_IN_BUS
-#define USART_SINGLE
+#define USART_IN_BUS
+// #define USART_SINGLE
 
 //-------- Kind of Reports Sended ----------------
 

@@ -306,7 +306,7 @@ void SetErrorStatus (error_t e)
 }
 
 //TODO: PONER UNA TRABA DE SETEOS PARA NO CAMBIAR NADA CORRIENDO
-
+//recibe tipo de senial
 resp_t SetSignalType (signal_type_t a)
 {
     //TODO: despues cargar directamente los k
@@ -331,6 +331,34 @@ resp_t SetSignalType (signal_type_t a)
 
     return resp_ok;
 }
+
+//recibe referecnia a la estructura de senial
+//recibe tipo de senial
+// resp_t SetSignalType (signals_struct_t * s, signal_type_t a)
+// {
+//     //TODO: despues cargar directamente los k
+//     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
+//         return resp_error;
+
+//     if (a == SQUARE_SIGNAL)
+//         p_signal = (unsigned short *) s_cuadrada_1_5A;
+
+// #if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
+//     if (a == TRIANGULAR_SIGNAL)
+//         p_signal = (unsigned short *) s_triangular_6A;
+// #else
+//     if (a == TRIANGULAR_SIGNAL)
+//         p_signal = (unsigned short *) s_triangular_1_5A;    
+// #endif
+
+//     if (a == SINUSOIDAL_SIGNAL)
+//         p_signal = (unsigned short *) s_senoidal_1_5A;
+
+//     // signal_to_gen.signal = a;
+//     s->signal = a;
+
+//     return resp_ok;
+// }
 
 resp_t SetFrequency (frequency_t a)
 {
@@ -366,7 +394,7 @@ resp_t SetPower (unsigned char a)
     return resp_ok;
 }
 
-//verifica que se cumplan con todos los parametros para poder enviar una señal coherente
+//verifica que se cumplan con todos los parametros para poder enviar una senial coherente
 resp_t AssertTreatmentParams (void)
 {
     resp_t resp = resp_error;
