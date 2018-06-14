@@ -569,6 +569,12 @@ void GenerateSignal (void)
 //hubo sobrecorriente, me llaman desde la interrupcion
 void Overcurrent_Shutdown (void)
 {
+#ifdef INT_WITH_LED
+    if (LED)
+        LED_OFF;
+    else
+        LED_ON;
+#endif
 	//primero freno todos los PWM
 	HIGH_LEFT_PWM(0);
 	LOW_RIGHT_PWM(0);

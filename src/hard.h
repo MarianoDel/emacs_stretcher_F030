@@ -22,7 +22,8 @@
 //-------- Type of Program ----------------
 #define POWER_WITH_MANAGEMENT
 // #define ONLY_POWER_WITHOUT_MANAGEMENT
-// #define INT_SPEED_RESPONSE
+// #define INT_SPEED_RESPONSE    //genera seniales y ve int, 30ms y reactiva solo
+// #define INT_WITH_LED        //no genero nada, solo espero int y muevo el LED
 
 
 //-------- Type of Program and Features ----------------

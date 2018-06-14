@@ -327,6 +327,13 @@ int main(void)
     }
 #endif
 
+#ifdef INT_WITH_LED
+    while (1)
+    {
+        //no genero nada, solo espero int y muevo el LED        
+    }   
+#endif
+
     return 0;
 }
 //--- End of Main ---//
@@ -373,27 +380,29 @@ void TimingDelay_Decrement(void)
 void EXTI2_3_IRQHandler(void)
 {
 
-	if(EXTI->PR & 0x00000004)	//Line2
-	{
-		//para pruebas
-		// if (LED)
-		// 	LED_OFF;
-		// else
-			LED_ON;
+    if(EXTI->PR & 0x00000004)	//Line2
+    {
+#ifndef INT_WITH_LED
+        //para pruebas
+        // if (LED)
+        // 	LED_OFF;
+        // else
+        LED_ON;
+#endif
 
-		// if (int_counter < 100)
-		// 	int_counter++;
-		// else
-		// {
-		// 	int_counter = 0;
-		// 	Usart1Send("100 ints\n");
-		// }
+        // if (int_counter < 100)
+        // 	int_counter++;
+        // else
+        // {
+        // 	int_counter = 0;
+        // 	Usart1Send("100 ints\n");
+        // }
 
 
-		Overcurrent_Shutdown();
+        Overcurrent_Shutdown();
 
-		EXTI->PR |= 0x00000004;
-	}
+        EXTI->PR |= 0x00000004;
+    }
 }
 
 
