@@ -79,6 +79,13 @@ typedef enum
 
 #define SIZEOF_OVERCURRENT_BUFF			8
 
+#define CURRENT_INTEGRAL_MAX_ERRORS        5
+#define CURRENT_INTEGRAL_THRESHOLD_10HZ         270
+#define CURRENT_INTEGRAL_THRESHOLD_30HZ         90
+#define CURRENT_INTEGRAL_THRESHOLD_60HZ         55
+
+
+
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
 //--- Exported functions ---//
@@ -86,6 +93,7 @@ typedef enum
 resp_t SetSignalType (signal_type_t);
 resp_t SetFrequency (frequency_t);
 resp_t SetPower (unsigned char);
+void GenerateSignalReset (void);
 void GenerateSignal (void);
 resp_t AssertTreatmentParams (void);
 treatment_t GetTreatmentState (void);

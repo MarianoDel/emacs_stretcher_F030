@@ -34,10 +34,22 @@ short d = 0;
 unsigned char protected = 0;
 
 //-- para determinacion de soft overcurrent ------------
+#ifdef USE_SOFT_OVERCURRENT
 unsigned short soft_overcurrent_max_current_in_cycles [SIZEOF_OVERCURRENT_BUFF];
 unsigned short soft_overcurrent_treshold = 0;
 unsigned short soft_overcurrent_index = 0;
+#endif
 
+//-- para determinar no current
+//SIZEOF_SIGNALS * max_ADC = 150 * 1023 = 153450
+//ojo, depende del salto de indice en la tabla segun la freq elegida
+#ifdef USE_SOFT_NO_CURRENT
+unsigned int current_integral = 0;
+unsigned int current_integral_running = 0;
+unsigned char current_integral_ended = 0;
+unsigned char current_integral_errors = 0;
+unsigned short current_integral_threshold = 0;
+#endif
 
 //Signals Templates
 #define I_MAX 465
@@ -130,18 +142,26 @@ void TreatmentManager (void)
     case TREATMENT_START_TO_GENERATE:		//reviso una vez mas los parametros y no tener ningun error
         if ((AssertTreatmentParams() == resp_ok) && (GetErrorStatus() == ERROR_OK))
         {
-            discharge_state = INIT_DISCHARGE;
+            GenerateSignalReset();
 
+#ifdef USE_SOFT_OVERCURRENT
             //cargo valor maximo de corriente para el soft_overcurrent
             soft_overcurrent_treshold = 1.2 * I_MAX * signal_to_gen.power / 100;
             soft_overcurrent_index = 0;
 
-            EXTIOn();
-
-#ifdef USE_SOFT_OVERCURRENT
             for (unsigned char i = 0; i < SIZEOF_OVERCURRENT_BUFF; i++)
                 soft_overcurrent_max_current_in_cycles[i] = 0;
 #endif
+#ifdef USE_SOFT_NO_CURRENT
+            current_integral_errors = 0;
+            if (signal_to_gen.frequency == TEN_HZ)
+                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_10HZ;
+            else if (signal_to_gen.frequency == THIRTY_HZ)
+                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_30HZ;
+            else
+                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_60HZ;
+#endif
+            EXTIOn();
             if (signal_to_gen.synchro_needed)
                 treatment_state = TREATMENT_GENERATING_WITH_SYNC;
             else
@@ -170,6 +190,28 @@ void TreatmentManager (void)
             treatment_state = TREATMENT_STOPPING;
             SetErrorStatus(ERROR_SOFT_OVERCURRENT);
         }
+#endif
+
+#ifdef USE_SOFT_NO_CURRENT
+        if (current_integral_ended)
+        {
+            current_integral_ended = 0;
+            if (current_integral_errors < CURRENT_INTEGRAL_MAX_ERRORS)
+            {
+                if (current_integral < current_integral_threshold)
+                {
+                    current_integral_errors++;
+                    Usart1Send("e\n");
+                }
+                else if (current_integral_errors)
+                    current_integral_errors--;
+            }
+            else
+            {
+                treatment_state = TREATMENT_STOPPING;
+                SetErrorStatus(ERROR_NO_CURRENT);
+            }
+        }                
 #endif
         break;
 
@@ -214,7 +256,7 @@ void TreatmentManager_IntSpeed (void)
 
                 if (GetErrorStatus() == ERROR_OK)
                 {
-                    discharge_state = INIT_DISCHARGE;
+                    GenerateSignalReset();
                     treatment_state = TREATMENT_GENERATING;
                     LED_OFF;
                     EXTIOn();
@@ -434,6 +476,12 @@ void SendAllConf (void)
     Usart1Send(b);
 }
 
+//reset a antes de la generacion de seniales
+void GenerateSignalReset (void)
+{
+    discharge_state = INIT_DISCHARGE;
+}
+
 //la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
 //sino espera a que sea quitado
 void GenerateSignal (void)
@@ -453,6 +501,10 @@ void GenerateSignal (void)
                     LOW_RIGHT_PWM(DUTY_ALWAYS);
                     discharge_state = NORMAL_DISCHARGE;
                     p_signal_running = p_signal;
+
+                    //no current
+                    current_integral_running = 0;
+                    current_integral_ended = 0;
                     break;
 
                 case NORMAL_DISCHARGE:
@@ -532,18 +584,31 @@ void GenerateSignal (void)
                 }
 
                 //-- Soft Overcurrent --//
+#ifdef USE_SOFT_OVERCURRENT
                 soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
                 if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
                     soft_overcurrent_index++;
                 else
                     soft_overcurrent_index = 0;
+#endif
 
                 //-- Signal Update --//
                 if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
+                {
                     p_signal_running += signal_to_gen.freq_table_inc;
+#ifdef USE_SOFT_NO_CURRENT
+                    current_integral_running += I_Sense;
+#endif
+                }
                 else
+                {
                     p_signal_running = p_signal;
-
+#ifdef USE_SOFT_NO_CURRENT
+                    current_integral = current_integral_running;
+                    current_integral_running = 0;
+                    current_integral_ended = 1;
+#endif
+                }
             }    //cierra sequence
         }    //cierra jumper protected
         else
