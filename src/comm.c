@@ -28,9 +28,15 @@ const char s_chf [] = {"chf"};
 const char s_set_signal [] = {"signal"};
 const char s_frequency [] = {"frequency"};
 const char s_power [] = {"power"};
-const char s_square [] = {"square"};
-const char s_triangular [] = {"triangular"};
-const char s_sinusoidal [] = {"sinusoidal"};
+const char s_square_0 [] = {"square 0"};
+const char s_square_90 [] = {"square 90"};
+const char s_square_180 [] = {"square 180"};
+const char s_triangular_0 [] = {"triangular 0"};
+const char s_triangular_90 [] = {"triangular 90"};
+const char s_triangular_180 [] = {"triangular 180"};
+const char s_sinusoidal_0 [] = {"sinusoidal 0"};
+const char s_sinusoidal_90 [] = {"sinusoidal 90"};
+const char s_sinusoidal_180 [] = {"sinusoidal 180"};
 const char s_ten_hz [] = {"10Hz"};
 const char s_thirty_hz [] = {"30Hz"};
 const char s_sixty_hz [] = {"60Hz"};
@@ -110,12 +116,26 @@ resp_t InterpretarMsg (void)
         {
             pStr += sizeof(s_set_signal);		//normalizo al payload, hay un espacio
 
-            if (strncmp(pStr, s_square, sizeof(s_square) - 1) == 0)
+            if (strncmp(pStr, s_square_0, sizeof(s_square_0) - 1) == 0)
                 resp = SetSignalType (SQUARE_SIGNAL);
-            else if (strncmp(pStr, s_triangular, sizeof(s_triangular) - 1) == 0)
-                resp = SetSignalType (TRIANGULAR_SIGNAL);
-            else if (strncmp(pStr, s_sinusoidal, sizeof(s_sinusoidal) - 1) == 0)
+            else if (strncmp(pStr, s_square_90, sizeof(s_square_90) - 1) == 0)
+                resp = SetSignalType (SQUARE_SIGNAL_90);
+            else if (strncmp(pStr, s_square_180, sizeof(s_square_180) - 1) == 0)
+                resp = SetSignalType (SQUARE_SIGNAL_180);
+            
+            else if (strncmp(pStr, s_triangular_0, sizeof(s_triangular_0) - 1) == 0)
+                resp = SetSignalType (TRIANGULAR_SIGNAL);            
+            else if (strncmp(pStr, s_triangular_90, sizeof(s_triangular_90) - 1) == 0)
+                resp = SetSignalType (TRIANGULAR_SIGNAL_90);
+            else if (strncmp(pStr, s_triangular_180, sizeof(s_triangular_180) - 1) == 0)
+                resp = SetSignalType (TRIANGULAR_SIGNAL_180);
+            
+            else if (strncmp(pStr, s_sinusoidal_0, sizeof(s_sinusoidal_0) - 1) == 0)
                 resp = SetSignalType (SINUSOIDAL_SIGNAL);
+            else if (strncmp(pStr, s_sinusoidal_90, sizeof(s_sinusoidal_90) - 1) == 0)
+                resp = SetSignalType (SINUSOIDAL_SIGNAL_90);
+            else if (strncmp(pStr, s_sinusoidal_180, sizeof(s_sinusoidal_180) - 1) == 0)
+                resp = SetSignalType (SINUSOIDAL_SIGNAL_180);
             else
                 resp = resp_error;
         }

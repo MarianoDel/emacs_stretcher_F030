@@ -7,8 +7,14 @@
 //--- Exported types ---//
 typedef enum {
 	SQUARE_SIGNAL = 0,
+	SQUARE_SIGNAL_90,
+	SQUARE_SIGNAL_180,
 	TRIANGULAR_SIGNAL,
-	SINUSOIDAL_SIGNAL
+	TRIANGULAR_SIGNAL_90,
+	TRIANGULAR_SIGNAL_180,
+	SINUSOIDAL_SIGNAL,
+	SINUSOIDAL_SIGNAL_90,
+	SINUSOIDAL_SIGNAL_180
 
 } signal_type_t;
 
@@ -20,16 +26,16 @@ typedef enum {
 } frequency_t;
 
 typedef struct {
-	signal_type_t signal;
-	frequency_t frequency;
-	unsigned char freq_table_inc;
-	unsigned char power;
-	unsigned char synchro_needed;
+    signal_type_t signal;
+    frequency_t frequency;
+    unsigned char freq_table_inc;
+    unsigned char power;
+    unsigned char synchro_needed;    //por ahora salen siempre sincronizadas
 
-	//internals
-	unsigned short kprop;
-	unsigned short kinteg;
-	unsigned short kderv;
+    //internals
+    unsigned short kprop;
+    unsigned short kinteg;
+    unsigned short kderv;
 
 } signals_struct_t;
 
@@ -38,7 +44,6 @@ typedef enum {
 	TREATMENT_STANDBY,
 	TREATMENT_START_TO_GENERATE,
 	TREATMENT_GENERATING,
-	TREATMENT_GENERATING_WITH_SYNC,
 	TREATMENT_STOPPING,
 	TREATMENT_STOPPING2
 
@@ -58,6 +63,8 @@ typedef enum {
 typedef enum
 {
 	INIT_DISCHARGE = 0,
+        WAIT_NO_SYNC,
+        WAIT_TO_SYNC,        
 	NORMAL_DISCHARGE,
 	TAU_DISCHARGE,
 	FAST_DISCHARGE,
@@ -84,7 +91,7 @@ typedef enum
 #define CURRENT_INTEGRAL_THRESHOLD_30HZ         90
 #define CURRENT_INTEGRAL_THRESHOLD_60HZ         55
 
-
+#define SIGNALS_WITHOUT_SYNC    10
 
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 

@@ -20,6 +20,9 @@ extern volatile unsigned short adc_ch[];
 //del Main
 extern volatile unsigned short timer_signals;
 
+//de usart para sync
+extern volatile unsigned char sync_on_signal;
+
 //--- VARIABLES GLOBALES ---//
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
@@ -32,6 +35,7 @@ unsigned short * p_signal_running;
 short d = 0;
 
 unsigned char protected = 0;
+unsigned char signals_without_sync_counter = 0;
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
@@ -53,69 +57,204 @@ unsigned short current_integral_threshold = 0;
 
 //Signals Templates
 #define I_MAX 465
-const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] ={0,19,38,58,77,96,115,134,152,171,
-														206,224,240,257,273,288,303,318,332,
-														358,370,381,392,402,412,420,428,435,
-														447,452,456,460,462,464,464,464,464,
-														460,456,452,447,442,435,428,420,412,
-														392,381,370,358,345,332,318,303,288,
-														257,240,224,206,189,171,152,134,115,
-														77,58,38,19,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
+const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] = {0,19,38,58,77,96,115,134,152,171,
+                                                         189,206,224,240,257,273,288,303,318,332,
+                                                         345,358,370,381,392,402,412,420,428,435,
+                                                         442,447,452,456,460,462,464,464,464,464,
+                                                         462,460,456,452,447,442,435,428,420,412,
+                                                         402,392,381,370,358,345,332,318,303,288,
+                                                         273,257,240,224,206,189,171,152,134,115,
+                                                         96,77,58,38,19,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0};
+
+
+const unsigned short s_senoidal_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,9,29,
+                                                            48,67,87,106,125,143,162,180,197,215,
+                                                            232,249,265,281,296,311,325,338,352,364,
+                                                            376,387,397,407,416,424,432,439,445,450,
+                                                            454,458,461,463,464,465,464,463,461,458,
+                                                            454,450,445,439,432,424,416,407,397,387,
+                                                            376,364,352,338,325,311,296,281,265,249,
+                                                            232,215,197,180,162,143,125,106,87,67,
+                                                            48,29,9,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0};
+
+//TODO: que todas las seniales terminen con 0 por el sincro, o mejorar en el dibujo
+const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,19,38,58,77,
+                                                             96,115,134,152,171,189,206,224,240,257,
+                                                             273,288,303,318,332,345,358,370,381,392,
+                                                             402,412,420,428,435,442,447,452,456,460,
+                                                             462,464,464,464,464,462,460,456,452,447,
+                                                             442,435,428,420,412,402,392,381,370,358,
+                                                             345,332,318,303,288,273,257,240,224,206,
+                                                             189,171,152,134,115,96,77,58,38,19,
+                                                             0,0};
+
+// const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,19,38,58,77,
+//                                                              96,115,134,152,171,189,206,224,240,257,
+//                                                              273,288,303,318,332,345,358,370,381,392,
+//                                                              402,412,420,428,435,442,447,452,456,460,
+//                                                              462,464,464,464,464,462,460,456,452,447,
+//                                                              442,435,428,420,412,402,392,381,370,358,
+//                                                              345,332,318,303,288,273,257,240,224,206,
+//                                                              189,171,152,134,115,96,77,58,38,19};
+
 
 const unsigned short s_cuadrada_1_5A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,465,465,465,465,465,
-														465,465,465,465,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,465,465,465,465,
+                                                         465,465,465,465,465,465,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0};
+
+const unsigned short s_cuadrada_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,465,465,465,465,465,465,465,
+                                                            465,465,465,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0,
+                                                            0,0,0,0,0,0,0,0,0,0};
+
+//TODO: que todas las seniales terminen con 0 por el sincro, o mejorar en el dibujo
+const unsigned short s_cuadrada_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             0,0,0,0,0,0,0,0,0,0,
+                                                             465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             465,465,465,465,465,465,465,465,465,465,
+                                                             0,0,0,0};
+
+// const unsigned short s_cuadrada_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,0,0,0,0,0,0,
+//                                                              0,0,0,0,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465,
+//                                                              465,465,465,465,465,465,465,465,465,465};
 
 const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43,49,55,
-														68,74,80,86,93,99,105,111,117,
-														130,136,142,148,155,161,167,173,179,
-														192,198,204,210,217,223,229,235,241,
-														254,260,266,272,279,285,291,297,303,
-														316,322,328,334,341,347,353,359,365,
-														378,384,390,396,403,409,415,421,427,
-														440,446,452,458,465,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0,
-														0,0,0,0,0,0,0,0,0};
+                                                           62,68,74,80,86,93,99,105,111,117,
+                                                           124,130,136,142,148,155,161,167,173,179,
+                                                           186,192,198,204,210,217,223,229,235,241,
+                                                           248,254,260,266,272,279,285,291,297,303,
+                                                           310,316,322,328,334,341,347,353,359,365,
+                                                           372,378,384,390,396,403,409,415,421,427,
+                                                           434,440,446,452,458,465,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0,
+                                                           0,0,0,0,0,0,0,0,0,0};
+
+const unsigned short s_triangular_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                              0,0,0,0,0,0,0,0,0,0,
+                                                              0,0,0,0,0,0,0,0,0,0,
+                                                              0,0,0,0,0,
+                                                              0,6,12,18,24,31,37,43,49,55,
+                                                              62,68,74,80,86,93,99,105,111,117,
+                                                              124,130,136,142,148,155,161,167,173,179,
+                                                              186,192,198,204,210,217,223,229,235,241,
+                                                              248,254,260,266,272,279,285,291,297,303,
+                                                              310,316,322,328,334,341,347,353,359,365,
+                                                              372,378,384,390,396,403,409,415,421,427,
+                                                              434,440,446,452,458,465,0,0,0,0,
+                                                              0,0,0,0,0,
+                                                              0,0,0,0,0,0,0,0,0,0,
+                                                              0,0,0,0,0,0,0,0,0,0,
+                                                              0,0,0,0,0,0,0,0,0,0};
+
+const unsigned short s_triangular_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,0,0,0,0,0,0,0,0,0,
+                                                               0,6,12,18,24,31,37,43,49,55,
+                                                               62,68,74,80,86,93,99,105,111,117,
+                                                               124,130,136,142,148,155,161,167,173,179,
+                                                               186,192,198,204,210,217,223,229,235,241,
+                                                               248,254,260,266,272,279,285,291,297,303,
+                                                               310,316,322,328,334,341,347,353,359,365,
+                                                               372,378,384,390,396,403,409,415,421,427,
+                                                               434,440,446,452,458,465,0,0,0,0};
 
 const unsigned short s_triangular_6A [SIZEOF_SIGNALS] = {0,11,23,35,47,59,71,83,95,107,
-                                                           131,143,155,167,179,191,203,215,227,
-                                                           251,263,275,287,299,311,323,335,347,
-                                                           371,383,395,407,419,431,443,455,467,
-                                                           491,503,515,527,539,551,563,575,587,
-                                                           611,623,635,647,659,671,683,695,707,
-                                                           731,743,755,767,779,791,803,815,827,
-                                                           851,863,875,887,899,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0};
+                                                         131,143,155,167,179,191,203,215,227,
+                                                         251,263,275,287,299,311,323,335,347,
+                                                         371,383,395,407,419,431,443,455,467,
+                                                         491,503,515,527,539,551,563,575,587,
+                                                         611,623,635,647,659,671,683,695,707,
+                                                         731,743,755,767,779,791,803,815,827,
+                                                         851,863,875,887,899,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0};
 
 
 //--- FUNCIONES DEL MODULO ---//
@@ -162,11 +301,7 @@ void TreatmentManager (void)
                 current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_60HZ;
 #endif
             EXTIOn();
-            if (signal_to_gen.synchro_needed)
-                treatment_state = TREATMENT_GENERATING_WITH_SYNC;
-            else
-                treatment_state = TREATMENT_GENERATING;
-
+            treatment_state = TREATMENT_GENERATING;
             ChangeLed(LED_TREATMENT_GENERATING);
         }
         else
@@ -213,9 +348,6 @@ void TreatmentManager (void)
             }
         }                
 #endif
-        break;
-
-    case TREATMENT_GENERATING_WITH_SYNC:
         break;
 
     case TREATMENT_STOPPING:
@@ -357,17 +489,31 @@ resp_t SetSignalType (signal_type_t a)
 
     if (a == SQUARE_SIGNAL)
         p_signal = (unsigned short *) s_cuadrada_1_5A;
+    if (a == SQUARE_SIGNAL_90)
+        p_signal = (unsigned short *) s_cuadrada_90_1_5A;
+    if (a == SQUARE_SIGNAL_180)
+        p_signal = (unsigned short *) s_cuadrada_180_1_5A;
 
+    
 #if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
     if (a == TRIANGULAR_SIGNAL)
         p_signal = (unsigned short *) s_triangular_6A;
 #else
     if (a == TRIANGULAR_SIGNAL)
-        p_signal = (unsigned short *) s_triangular_1_5A;    
+        p_signal = (unsigned short *) s_triangular_1_5A;
+    if (a == TRIANGULAR_SIGNAL_90)
+        p_signal = (unsigned short *) s_triangular_90_1_5A;    
+    if (a == TRIANGULAR_SIGNAL_180)
+        p_signal = (unsigned short *) s_triangular_180_1_5A;    
+    
 #endif
 
     if (a == SINUSOIDAL_SIGNAL)
         p_signal = (unsigned short *) s_senoidal_1_5A;
+    if (a == SINUSOIDAL_SIGNAL_90)
+        p_signal = (unsigned short *) s_senoidal_90_1_5A;
+    if (a == SINUSOIDAL_SIGNAL_180)
+        p_signal = (unsigned short *) s_senoidal_180_1_5A;
 
     signal_to_gen.signal = a;
 
@@ -454,9 +600,13 @@ resp_t AssertTreatmentParams (void)
         (signal_to_gen.frequency != SIXTY_HZ))
         return resp;
 
-    if ((signal_to_gen.signal != SQUARE_SIGNAL) &&
-        (signal_to_gen.signal != TRIANGULAR_SIGNAL) &&
-        (signal_to_gen.signal != SINUSOIDAL_SIGNAL))
+    // if ((signal_to_gen.signal != SQUARE_SIGNAL) &&
+    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL) &&
+    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_120) &&
+    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_180) &&
+    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_240) &&
+    //     (signal_to_gen.signal != SINUSOIDAL_SIGNAL))
+    if (signal_to_gen.signal > SINUSOIDAL_SIGNAL_180)
         return resp;
 
     //TODO: revisar tambien puntero!!!!
@@ -502,11 +652,47 @@ void GenerateSignal (void)
                     discharge_state = NORMAL_DISCHARGE;
                     p_signal_running = p_signal;
 
+                    //sync
+                    signals_without_sync_counter = 0;
+
                     //no current
+#ifdef USE_SOFT_NO_CURRENT
                     current_integral_running = 0;
                     current_integral_ended = 0;
+#endif
                     break;
 
+                case WAIT_NO_SYNC:
+                    if (!signals_without_sync_counter)
+                    {
+                        if (!sync_on_signal)
+                            discharge_state++;
+                        else
+                            sync_on_signal = 0;
+                    }
+                    else
+                        discharge_state++;
+                    
+                    break;
+
+                case WAIT_TO_SYNC:
+                    if (!signals_without_sync_counter)
+                    {
+                        //si llegue aca se me acabaron todas las seniales sin sync que podia mandar
+                        //me quedo esperando un nuevo sync
+                        if (sync_on_signal)
+                        {
+                            signals_without_sync_counter = SIGNALS_WITHOUT_SYNC;
+                            discharge_state++;
+                        }
+                    }
+                    else
+                    {
+                        signals_without_sync_counter--;
+                        discharge_state++;
+                    }
+                    break;
+                    
                 case NORMAL_DISCHARGE:
 
                     d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
@@ -583,31 +769,38 @@ void GenerateSignal (void)
                     break;
                 }
 
-                //-- Soft Overcurrent --//
+                //si la senial esta corriendo hago update de senial y un par de chequeos
+                if ((discharge_state == NORMAL_DISCHARGE) ||
+                    (discharge_state == TAU_DISCHARGE) ||
+                    (discharge_state == FAST_DISCHARGE))
+                {
+                    //-- Soft Overcurrent --//
 #ifdef USE_SOFT_OVERCURRENT
-                soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
-                if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
-                    soft_overcurrent_index++;
-                else
-                    soft_overcurrent_index = 0;
+                    soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
+                    if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
+                        soft_overcurrent_index++;
+                    else
+                        soft_overcurrent_index = 0;
 #endif
 
-                //-- Signal Update --//
-                if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
-                {
-                    p_signal_running += signal_to_gen.freq_table_inc;
+                    //-- Signal Update --//
+                    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
+                    {
+                        p_signal_running += signal_to_gen.freq_table_inc;
 #ifdef USE_SOFT_NO_CURRENT
-                    current_integral_running += I_Sense;
+                        current_integral_running += I_Sense;
 #endif
-                }
-                else
-                {
-                    p_signal_running = p_signal;
+                    }
+                    else
+                    {
+                        discharge_state = WAIT_NO_SYNC;
+                        p_signal_running = p_signal;
 #ifdef USE_SOFT_NO_CURRENT
-                    current_integral = current_integral_running;
-                    current_integral_running = 0;
-                    current_integral_ended = 1;
+                        current_integral = current_integral_running;
+                        current_integral_running = 0;
+                        current_integral_ended = 1;
 #endif
+                    }
                 }
             }    //cierra sequence
         }    //cierra jumper protected

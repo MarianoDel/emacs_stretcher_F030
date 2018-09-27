@@ -40,6 +40,9 @@ volatile unsigned short timer_led = 0;
 // volatile unsigned char rx1buff[SIZEOF_DATA];
 volatile unsigned char usart1_have_data = 0;
 
+//de signals y usart para sync
+volatile unsigned char sync_on_signal = 0;
+
 // ------- Externals del o para el ADC -------
 #ifdef ADC_WITH_INT
 volatile unsigned short adc_ch[3];
@@ -104,9 +107,9 @@ int main(void)
 {
     unsigned char i, ii;
 
-    main_state_t main_state = MAIN_INIT;
+    // main_state_t main_state = MAIN_INIT;
 
-    char s_lcd [100];		//lo agrando porque lo uso tambien para enviar SMS
+    // char s_lcd [100];
 
     //GPIO Configuration.
     GPIO_Config();

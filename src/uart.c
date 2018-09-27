@@ -34,6 +34,9 @@
 //--- Externals variables ---//
 extern volatile unsigned char usart1_have_data;
 
+//de signals para sync
+extern volatile unsigned char sync_on_signal;
+
 //--- Private variables ---//
 volatile unsigned char * ptx1;
 volatile unsigned char * ptx1_pckt_index;
@@ -85,27 +88,32 @@ void USART1_IRQHandler(void)
     {
         dummy = USART1->RDR & 0x0FF;
 
-        if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+        //para sincronismo
+        if (dummy == '.')
+            sync_on_signal = 1;
+        else
         {
-            if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
+            if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
             {
-                *prx1 = '\0';
-                usart1_have_data = 1;
-                // if (LED)
-                // 	LED_OFF;
-                // else
-                // 	LED_ON;
+                if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
+                {
+                    *prx1 = '\0';
+                    usart1_have_data = 1;
+                    // if (LED)
+                    // 	LED_OFF;
+                    // else
+                    // 	LED_ON;
 
+                }
+                else
+                {
+                    *prx1 = dummy;
+                    prx1++;
+                }
             }
             else
-            {
-                *prx1 = dummy;
-                prx1++;
-            }
+                prx1 = rx1buff;    //soluciona problema bloqueo con garbage
         }
-        else
-            prx1 = rx1buff;    //soluciona problema bloqueo con garbage
-
     }
 
     /* USART in mode Transmitter -------------------------------------------------*/
