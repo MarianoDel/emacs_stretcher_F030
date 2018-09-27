@@ -206,6 +206,7 @@ assobjects = $(assemblersources:.s=.o)
 
 all: $(objects) $(assobjects) $(FULL_PRJ).elf $(FULL_PRJ).bin
 	arm-none-eabi-size $(FULL_PRJ).elf
+	gtags -q
 
 $(objects): %.o: %.c
 	$(CC) -c $(CPFLAGS) -I. $(INCDIR) $< -o $@
