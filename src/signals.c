@@ -770,10 +770,10 @@ void GenerateSignal (void)
                 }
 
                 //si la senial esta corriendo hago update de senial y un par de chequeos
-                if ((discharge_state == NORMAL_DISCHARGE) ||
-                    (discharge_state == TAU_DISCHARGE) ||
-                    (discharge_state == FAST_DISCHARGE))
-                {
+                // if ((discharge_state == NORMAL_DISCHARGE) ||
+                //     (discharge_state == TAU_DISCHARGE) ||
+                //     (discharge_state == FAST_DISCHARGE))
+                // {
                     //-- Soft Overcurrent --//
 #ifdef USE_SOFT_OVERCURRENT
                     soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
@@ -793,7 +793,8 @@ void GenerateSignal (void)
                     }
                     else
                     {
-                        discharge_state = WAIT_NO_SYNC;
+                        // discharge_state = WAIT_NO_SYNC;
+                        discharge_state = NORMAL_DISCHARGE;
                         p_signal_running = p_signal;
 #ifdef USE_SOFT_NO_CURRENT
                         current_integral = current_integral_running;
@@ -801,7 +802,7 @@ void GenerateSignal (void)
                         current_integral_ended = 1;
 #endif
                     }
-                }
+                // }    //fin if signal running
             }    //cierra sequence
         }    //cierra jumper protected
         else

@@ -11,9 +11,9 @@
 
 //----------- Defines For Configuration -------------
 //----------- Harcode Direction -------------
-// #define OWN_CHANNEL 1
+#define OWN_CHANNEL 1
 // #define OWN_CHANNEL 2
-#define OWN_CHANNEL 3
+// #define OWN_CHANNEL 3
 
 //----------- Hardware Board Version -------------
 // #define VER_1_0
@@ -34,7 +34,7 @@
 // #define USE_SOFT_OVERCURRENT
 
 //Si utiliza la proteccion de no current
-// #define USE_SOFT_NO_CURRENT
+#define USE_SOFT_NO_CURRENT
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS
