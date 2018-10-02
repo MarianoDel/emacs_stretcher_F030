@@ -24,7 +24,7 @@
 extern volatile unsigned char timer_1seg;
 extern volatile unsigned short timer_led_comm;
 extern volatile unsigned short wait_ms_var;
-
+extern volatile unsigned char pid_flag;
 
 //--- VARIABLES GLOBALES ---//
 
@@ -178,6 +178,11 @@ void TIM_3_Init (void)			//quiero algo alrededor de los 7KHz
 
 	//TIM3->CCR2 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
 	TIM3->CCR1 = 3429;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+
+        //activo una int para generar flag del PID
+        TIM3->DIER |= TIM_DIER_UIE;
+        NVIC_EnableIRQ(TIM3_IRQn);
+	NVIC_SetPriority(TIM3_IRQn, 8);
 }
 
 
@@ -213,31 +218,13 @@ void TIM_3_Init (void)			//quiero algo alrededor de los 7KHz
 // 	GPIOA->AFR[1] = temp;
 // }
 
-void TIM3_IRQHandler (void)	//1 ms
+void TIM3_IRQHandler (void)	//alrededor de 7KHz
 {
-	/*
-	Usart_Time_1ms ();
-
-	if (timer_1seg)
-	{
-		if (timer_1000)
-			timer_1000--;
-		else
-		{
-			timer_1seg--;
-			timer_1000 = 1000;
-		}
-	}
-
-	if (timer_led_comm)
-		timer_led_comm--;
-
-	if (timer_standby)
-		timer_standby--;
-	*/
-	//bajar flag
-	if (TIM3->SR & 0x01)	//bajo el flag
-		TIM3->SR = 0x00;
+    pid_flag = 1;
+    
+    //bajar flag
+    if (TIM3->SR & 0x01)	//bajo el flag
+        TIM3->SR = 0x00;
 }
 
 

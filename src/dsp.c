@@ -23,9 +23,28 @@ short error_z2 = 0;
 short d_last = 0;
 
 /* Module Definitions ---------------------------------------------------------*/
-//todos se dividen por 128
-#define KPV	857			// 6.7 desde python PI_zpk_KpKi.py
-#define KIV	844			// 6.6 desde python PI_zpk_KpKi.py
+//todos se dividen por 128 @1500Hz
+// #define KPV	857			// 5 desde python PI_zpk_KpKi.py
+// #define KIV	844			// 6.6 desde python PI_zpk_KpKi.py
+// // #define KDV	0			// 0
+// //todos se dividen por 128 @7000Hz
+// // #define KPV	128			// 6.7 desde python PI_zpk_KpKi.py
+// // #define KIV	16			// 6.6 desde python PI_zpk_KpKi.py
+// #define KDV	0			// 0
+
+// //lindos parametros de senoidal
+// #define KPV	640			// 5 desde python PI_zpk_KpKi.py
+// #define KIV	16			// 0.125
+// #define KDV	0			// 0
+
+// // //lindos parametros de triangular
+// #define KPV	640			// 5 desde python PI_zpk_KpKi.py
+// #define KIV	128			// 0.125
+// #define KDV	0			// 0
+
+// //lindos parametros de cuadrada
+#define KPV	640			// 5 desde python PI_zpk_KpKi.py
+#define KIV	200			// 2
 #define KDV	0			// 0
 
 //todos se dividen por 128

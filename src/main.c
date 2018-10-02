@@ -34,6 +34,7 @@
 // ------- Externals de Timers  ------
 volatile unsigned short timer_signals = 0;
 volatile unsigned short timer_led = 0;
+volatile unsigned char pid_flag = 0;
 
 // ------- Externals del Puerto serie  -------
 // volatile unsigned char tx1buff[SIZEOF_DATA];
@@ -190,7 +191,8 @@ int main(void)
     AdcConfig();		//recordar habilitar sensor en adc.h
 
     TIM_1_Init ();					//lo utilizo para synchro ADC muestras 1500Hz
-    TIM_3_Init ();					//lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
+    TIM_3_Init ();    //lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
+                      //tambien lo activo para hacer mas cuentas en el pid
 
     //Update_TIM3_CH2 (10);
     // TIM3->CCR3 = 1000;

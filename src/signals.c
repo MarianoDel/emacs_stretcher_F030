@@ -19,6 +19,7 @@ extern volatile unsigned short adc_ch[];
 
 //del Main
 extern volatile unsigned short timer_signals;
+extern volatile unsigned char pid_flag;
 
 //de usart para sync
 extern volatile unsigned char sync_on_signal;
@@ -58,20 +59,20 @@ unsigned short current_integral_threshold = 0;
 //Signals Templates
 #define I_MAX 465
 const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] = {0,19,38,58,77,96,115,134,152,171,
-                                                         206,224,240,257,273,288,303,318,332,
-                                                         358,370,381,392,402,412,420,428,435,
-                                                         447,452,456,460,462,464,464,464,464,
-                                                         460,456,452,447,442,435,428,420,412,
-                                                         392,381,370,358,345,332,318,303,288,
-                                                         257,240,224,206,189,171,152,134,115,
-                                                         77,58,38,19,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0};
+                                                         189,206,224,240,257,273,288,303,318,332,
+                                                         345,358,370,381,392,402,412,420,428,435,
+                                                         442,447,452,456,460,462,464,464,464,464,
+                                                         462,460,456,452,447,442,435,428,420,412,
+                                                         402,392,381,370,358,345,332,318,303,288,
+                                                         273,257,240,224,206,189,171,152,134,115,
+                                                         96,77,58,38,19,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0,
+                                                         0,0,0,0,0,0,0,0,0,0};
 
 const unsigned short s_senoidal_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
                                                             0,0,0,0,0,0,0,0,0,0,
@@ -106,23 +107,6 @@ const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0
                                                              345,332,318,303,288,273,257,240,224,206,
                                                              189,171,152,134,115,96,77,58,38,19,
                                                              0,0};
-
-// const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,19,38,58,77,
-//                                                              96,115,134,152,171,189,206,224,240,257,
-//                                                              273,288,303,318,332,345,358,370,381,392,
-//                                                              402,412,420,428,435,442,447,452,456,460,
-//                                                              462,464,464,464,464,462,460,456,452,447,
-//                                                              442,435,428,420,412,402,392,381,370,358,
-//                                                              345,332,318,303,288,273,257,240,224,206,
-//                                                              189,171,152,134,115,96,77,58,38,19};
-
 
 const unsigned short s_cuadrada_1_5A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
                                                          465,465,465,465,465,465,465,465,465,465,
@@ -173,22 +157,6 @@ const unsigned short s_cuadrada_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0
                                                              465,465,465,465,465,465,465,465,465,465,
                                                              465,465,465,465,465,465,465,465,465,465,
                                                              0,0,0,0};
-
-// const unsigned short s_cuadrada_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,0,0,0,0,0,0,
-//                                                              0,0,0,0,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465,
-//                                                              465,465,465,465,465,465,465,465,465,465};
 
 const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43,49,55,
                                                            62,68,74,80,86,93,99,105,111,117,
@@ -633,15 +601,18 @@ void GenerateSignalReset (void)
 
 //la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
 //sino espera a que sea quitado
+//cada muestra seq_ready llega a 1500Hz
+//TODO: mejorar esto dar al pid un par de cuentas para cada muestra, si la senial es de 0
+//descargar rapido y apagar
 void GenerateSignal (void)
 {
     if (!protected)
     {
         if (!STOP_JUMPER)
-        {              
-            if (seq_ready)
+        {
+            if (pid_flag)
             {
-                seq_ready = 0;
+                pid_flag = 0;    //aprox 7KHz synchro con pwm
 
                 switch (discharge_state)
                 {
@@ -767,12 +738,17 @@ void GenerateSignal (void)
                     discharge_state = INIT_DISCHARGE;
                     break;
                 }
+            }    //fin pid_flag
 
-                //si la senial esta corriendo hago update de senial y un par de chequeos
-                // if ((discharge_state == NORMAL_DISCHARGE) ||
-                //     (discharge_state == TAU_DISCHARGE) ||
-                //     (discharge_state == FAST_DISCHARGE))
-                // {
+            //si la senial esta corriendo hago update de senial y un par de chequeos
+            if (seq_ready)
+            {
+                seq_ready = 0;
+
+                if ((discharge_state == NORMAL_DISCHARGE) ||
+                    (discharge_state == TAU_DISCHARGE) ||
+                    (discharge_state == FAST_DISCHARGE))
+                {
                     //-- Soft Overcurrent --//
 #ifdef USE_SOFT_OVERCURRENT
                     soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
@@ -792,8 +768,12 @@ void GenerateSignal (void)
                     }
                     else
                     {
-                        // discharge_state = WAIT_NO_SYNC;
-                        discharge_state = NORMAL_DISCHARGE;
+                        //si quiero forzar ir a NORMAL_DISCHARGE u otro debo corregir los PWM
+                        LOW_RIGHT_PWM (DUTY_ALWAYS);
+                        HIGH_LEFT_PWM (0);
+                        // discharge_state = NORMAL_DISCHARGE;
+                        discharge_state = WAIT_NO_SYNC;
+                        
                         p_signal_running = p_signal;
 #ifdef USE_SOFT_NO_CURRENT
                         current_integral = current_integral_running;
@@ -801,8 +781,8 @@ void GenerateSignal (void)
                         current_integral_ended = 1;
 #endif
                     }
-                // }    //fin if signal running
-            }    //cierra sequence
+                }    //fin if signal running
+            }    //cierra sequence        
         }    //cierra jumper protected
         else
         {
