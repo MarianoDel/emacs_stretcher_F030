@@ -66,7 +66,6 @@ typedef enum
         WAIT_NO_SYNC,
         WAIT_TO_SYNC,        
 	NORMAL_DISCHARGE,
-	TAU_DISCHARGE,
 	FAST_DISCHARGE,
 	STOPPED_BY_INT
 

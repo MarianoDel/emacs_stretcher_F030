@@ -668,45 +668,31 @@ void GenerateSignal (void)
                     d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
                                   I_Sense, d);
 
-                    //reviso si necesito cambiar a descarga por tau
-                    if (d < 0)
+                    //el tau se resuelve aca
+                    if (d < -5)    //doy -5 de espacio para TAU
                     {
                         HIGH_LEFT_PWM(0);
-                        discharge_state = TAU_DISCHARGE;
-                        d = 0;	//limpio para pid descarga
-                    }
-                    else
-                    {
-                        if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-                            d = DUTY_95_PERCENT;
-
-                        HIGH_LEFT_PWM(d);
-                    }
-                    break;
-
-                case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
-
-                    d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                                  I_Sense, d);	//OJO cambiar este pid
-
-                    //reviso si necesito cambiar a descarga rapida
-                    if (d < 0)
-                    {
+                        discharge_state = FAST_DISCHARGE;
+                        
                         if (-d < DUTY_100_PERCENT)
                             LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
                         else
-                            LOW_RIGHT_PWM(0);
+                            LOW_RIGHT_PWM(0);    //descarga maxima
 
-                        discharge_state = FAST_DISCHARGE;
+                    }
+                    else if (d < 0)
+                    {
+                        //esto es tau
+                        d = 0;
+                        HIGH_LEFT_PWM(d);
                     }
                     else
                     {
-                        //vuelvo a NORMAL_DISCHARGE
+                        //esto es normal
                         if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
                             d = DUTY_95_PERCENT;
 
                         HIGH_LEFT_PWM(d);
-                        discharge_state = NORMAL_DISCHARGE;
                     }
                     break;
 
@@ -715,19 +701,19 @@ void GenerateSignal (void)
                     d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
                                   I_Sense_negado, d);	//OJO cambiar este pid
 
-                    //reviso si necesito cambiar a descarga rapida
-                    if (d < 0)
+                    //reviso si necesito cambiar a descarga por tau o normal
+                    if (d < -5)
                     {
                         if (-d < DUTY_100_PERCENT)
                             LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
                         else
-                            LOW_RIGHT_PWM(0);
+                            LOW_RIGHT_PWM(0);    //descarga maxima
                     }
                     else
                     {
-                        //vuelvo a TAU_DISCHARGE
+                        //vuelvo a NORMAL_DISCHARGE
                         LOW_RIGHT_PWM(DUTY_ALWAYS);
-                        discharge_state = TAU_DISCHARGE;
+                        discharge_state = NORMAL_DISCHARGE;
                     }
                     break;
 
@@ -746,7 +732,6 @@ void GenerateSignal (void)
                 seq_ready = 0;
 
                 if ((discharge_state == NORMAL_DISCHARGE) ||
-                    (discharge_state == TAU_DISCHARGE) ||
                     (discharge_state == FAST_DISCHARGE))
                 {
                     //-- Soft Overcurrent --//
