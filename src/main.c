@@ -50,6 +50,13 @@ volatile unsigned short adc_ch[3];
 volatile unsigned char seq_ready = 0;
 #endif
 
+// ------- Externals del PID dsp.c -------
+#ifdef USE_PARAMETERS_IN_RAM
+unsigned short pid_param_p = 0;
+unsigned short pid_param_i = 0;
+unsigned short pid_param_d = 0;
+#endif
+
 // ------- Externals para filtros -------
 unsigned short mains_voltage_filtered;
 //

@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 
-//--- VARIABLES EXTERNAS ---//
+/* Externals variables ---------------------------------------------------------*/
 //del ADC
 extern volatile unsigned char seq_ready;
 extern volatile unsigned short adc_ch[];
@@ -23,6 +23,13 @@ extern volatile unsigned char pid_flag;
 
 //de usart para sync
 extern volatile unsigned char sync_on_signal;
+
+//del pid dsp.c
+#ifdef USE_PARAMETERS_IN_RAM
+extern unsigned short pid_param_p;
+extern unsigned short pid_param_i;
+extern unsigned short pid_param_d;
+#endif
 
 //--- VARIABLES GLOBALES ---//
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
@@ -56,6 +63,20 @@ unsigned char current_integral_errors = 0;
 unsigned short current_integral_threshold = 0;
 #endif
 
+//parametros del PID segun las seniales (solo en RAM)
+#ifdef USE_PARAMETERS_IN_RAM
+#define PID_SQUARE_P    640
+#define PID_SQUARE_I    200
+#define PID_SQUARE_D    0
+
+#define PID_TRIANGULAR_P    640
+#define PID_TRIANGULAR_I    128
+#define PID_TRIANGULAR_D    0
+
+#define PID_SINUSOIDAL_P    640
+#define PID_SINUSOIDAL_I    16
+#define PID_SINUSOIDAL_D    0
+#endif
 //Signals Templates
 #define I_MAX 465
 const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] = {0,19,38,58,77,96,115,134,152,171,
@@ -450,7 +471,6 @@ void SetErrorStatus (error_t e)
 //recibe tipo de senial
 resp_t SetSignalType (signal_type_t a)
 {
-    //TODO: despues cargar directamente los k
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
 
@@ -484,6 +504,29 @@ resp_t SetSignalType (signal_type_t a)
 
     signal_to_gen.signal = a;
 
+#ifdef USE_PARAMETERS_IN_RAM
+    if ((a == SQUARE_SIGNAL) || (a == SQUARE_SIGNAL_90) || (a == SQUARE_SIGNAL_180))
+    {
+        pid_param_p = PID_SQUARE_P;
+        pid_param_i = PID_SQUARE_I;
+        pid_param_d = PID_SQUARE_D;
+    }
+
+    if ((a == TRIANGULAR_SIGNAL) || (a == TRIANGULAR_SIGNAL_90) || (a == TRIANGULAR_SIGNAL_180))
+    {
+        pid_param_p = PID_TRIANGULAR_P;
+        pid_param_i = PID_TRIANGULAR_I;
+        pid_param_d = PID_TRIANGULAR_D;
+    }
+
+    if ((a == SINUSOIDAL_SIGNAL) || (a == SINUSOIDAL_SIGNAL_90) || (a == SINUSOIDAL_SIGNAL_180))
+    {
+        pid_param_p = PID_SINUSOIDAL_P;
+        pid_param_i = PID_SINUSOIDAL_I;
+        pid_param_d = PID_SINUSOIDAL_D;
+    }
+#endif
+    
     return resp_ok;
 }
 

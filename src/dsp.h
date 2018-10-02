@@ -8,6 +8,16 @@
 #ifndef DSP_H_
 #define DSP_H_
 
+#include "hard.h"
+
+#ifdef USE_PARAMETERS_IN_FLASH
+#define PARAMS_IN_FLASH
+#endif
+#ifdef USE_PARAMETERS_IN_RAM
+#define PARAMS_IN_RAM
+#endif
+
+
 #define MAFilter32Pote(X)  MAFilter32Circular(X, v_pote_samples, &v_pote_index, &pote_sumation)
 
 unsigned short RandomGen (unsigned int);

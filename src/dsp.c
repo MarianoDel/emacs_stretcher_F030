@@ -13,7 +13,11 @@
 
 
 /* Externals variables ---------------------------------------------------------*/
-
+#ifdef PARAMS_IN_RAM
+extern unsigned short pid_param_p;
+extern unsigned short pid_param_i;
+extern unsigned short pid_param_d;
+#endif
 
 /* Global variables ---------------------------------------------------------*/
 //------- de los PID ---------
@@ -23,6 +27,7 @@ short error_z2 = 0;
 short d_last = 0;
 
 /* Module Definitions ---------------------------------------------------------*/
+#ifdef PARAMS_IN_FLASH
 //todos se dividen por 128 @1500Hz
 // #define KPV	857			// 5 desde python PI_zpk_KpKi.py
 // #define KIV	844			// 6.6 desde python PI_zpk_KpKi.py
@@ -68,7 +73,7 @@ short d_last = 0;
 #pragma message(STRING(K1V))
 #pragma message(STRING(K2V))
 #pragma message(STRING(K3V))
-
+#endif    //PARAMS_IN_FLASH
 
 
 /* Module functions ---------------------------------------------------------*/
@@ -200,7 +205,42 @@ unsigned short MAFilter32Circular (unsigned short new_sample, unsigned short * p
 	return total_ma >> 5;
 }
 
-short PID (short setpoint, short sample)
+
+// short PID (short setpoint, short sample)
+// {
+// 	short error = 0;
+// 	short d = 0;
+
+// 	short val_k1 = 0;
+// 	short val_k2 = 0;
+// 	short val_k3 = 0;
+
+// 	error = setpoint - sample;
+
+// 	//K1
+// 	acc = K1V * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+// 	val_k1 = acc >> 7;
+
+// 	//K2
+// 	acc = K2V * error_z1;		//K2 = no llega pruebo con 1
+// 	val_k2 = acc >> 7;			//si es mas grande que K1 + K3 no lo deja arrancar
+
+// 	//K3
+// 	acc = K3V * error_z2;		//K3 = 0.4
+// 	val_k3 = acc >> 7;
+
+// 	d = d_last + val_k1 - val_k2 + val_k3;
+
+// 	//Update variables PID
+// 	error_z2 = error_z1;
+// 	error_z1 = error;
+// 	d_last = d;
+
+// 	return d;
+// }
+
+#ifdef PARAMS_IN_FLASH
+short PID_roof (short setpoint, short sample, short last_d)
 {
 	short error = 0;
 	short d = 0;
@@ -223,15 +263,20 @@ short PID (short setpoint, short sample)
 	acc = K3V * error_z2;		//K3 = 0.4
 	val_k3 = acc >> 7;
 
-	d = d_last + val_k1 - val_k2 + val_k3;
+	d = last_d + val_k1 - val_k2 + val_k3;
 
 	//Update variables PID
 	error_z2 = error_z1;
 	error_z1 = error;
-	d_last = d;
 
 	return d;
 }
+#endif
+
+#ifdef PARAMS_IN_RAM
+#define K1V    (pid_param_p + pid_param_i + pid_param_d)
+#define K2V    (pid_param_p + pid_param_d + pid_param_d)
+#define K3V    (pid_param_d)
 
 short PID_roof (short setpoint, short sample, short last_d)
 {
@@ -264,3 +309,4 @@ short PID_roof (short setpoint, short sample, short last_d)
 
 	return d;
 }
+#endif
