@@ -659,6 +659,7 @@ void GenerateSignalReset (void)
 //TODO: mejorar esto dar al pid un par de cuentas para cada muestra, si la senial es de 0
 //descargar rapido y apagar
 #define TAU_SPACE    0
+#define HOW_MANY_ZEROS_TO_ZERO    3
 void GenerateSignal (void)
 {
     if (!protected)
@@ -674,11 +675,12 @@ void GenerateSignal (void)
                 case INIT_DISCHARGE:			//arranco siempre con descarga por TAU
                     HIGH_LEFT_PWM(0);
                     LOW_RIGHT_PWM(DUTY_ALWAYS);
-                    discharge_state = NORMAL_DISCHARGE;
+                    discharge_state = WAIT_FOR_SYNC;
                     p_signal_running = p_signal;
 
                     //sync
                     signals_without_sync_counter = 0;
+                    sync_on_signal = 0;
 
                     //no current
 #ifdef USE_SOFT_NO_CURRENT
@@ -687,34 +689,16 @@ void GenerateSignal (void)
 #endif
                     break;
 
-                case WAIT_NO_SYNC:
-                    if (!signals_without_sync_counter)
+                case WAIT_FOR_SYNC:
+                    if (sync_on_signal)
                     {
-                        if (!sync_on_signal)
-                            discharge_state++;
-                        else
-                            sync_on_signal = 0;
-                    }
-                    else
+                        sync_on_signal = 0;
+                        signals_without_sync_counter = SIGNALS_WITHOUT_SYNC;
                         discharge_state++;
-                    
-                    break;
-
-                case WAIT_TO_SYNC:
-                    if (!signals_without_sync_counter)
-                    {
-                        //si llegue aca se me acabaron todas las seniales sin sync que podia mandar
-                        //me quedo esperando un nuevo sync
-                        if (sync_on_signal)
-                        {
-                            signals_without_sync_counter = SIGNALS_WITHOUT_SYNC;
-                            discharge_state++;
-                        }
-                    }
-                    else
-                    {
-                        signals_without_sync_counter--;
-                        discharge_state++;
+                        // zeroes_sp = 0;
+                        //seteo pwm normal discharge
+                        LOW_RIGHT_PWM (DUTY_ALWAYS);
+                        HIGH_LEFT_PWM (0);
                     }
                     break;
                     
@@ -723,23 +707,36 @@ void GenerateSignal (void)
                     d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
                                   I_Sense, d);
 
-                    //el tau se resuelve aca
-                    if (d < TAU_SPACE)    //doy -5 de espacio para TAU
+                    //reviso si necesito cambiar a descarga por tau
+                    if (d < 0)
                     {
                         HIGH_LEFT_PWM(0);
-                        discharge_state = FAST_DISCHARGE;
-                        
+                        discharge_state = TAU_DISCHARGE;
+                        d = 0;	//limpio para pid descarga
+                    }
+                    else
+                    {
+                        if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+                            d = DUTY_95_PERCENT;
+
+                        HIGH_LEFT_PWM(d);
+                    }
+                    break;
+
+                case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
+
+                    d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                                  I_Sense, d);	//OJO cambiar este pid
+
+                    //reviso si necesito cambiar a descarga rapida
+                    if (d < 0)
+                    {
                         if (-d < DUTY_100_PERCENT)
                             LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
                         else
                             LOW_RIGHT_PWM(0);    //descarga maxima
 
-                    }
-                    else if (d < 0)
-                    {
-                        //esto es tau
-                        d = 0;
-                        HIGH_LEFT_PWM(d);
+                        discharge_state = FAST_DISCHARGE;
                     }
                     else
                     {
@@ -748,6 +745,7 @@ void GenerateSignal (void)
                             d = DUTY_95_PERCENT;
 
                         HIGH_LEFT_PWM(d);
+                        discharge_state = NORMAL_DISCHARGE;
                     }
                     break;
 
@@ -766,9 +764,9 @@ void GenerateSignal (void)
                     }
                     else
                     {
-                        //vuelvo a NORMAL_DISCHARGE
+                        //vuelvo a TAU_DISCHARGE
                         LOW_RIGHT_PWM(DUTY_ALWAYS);
-                        discharge_state = NORMAL_DISCHARGE;
+                        discharge_state = TAU_DISCHARGE;
                     }
                     break;
 
@@ -781,6 +779,23 @@ void GenerateSignal (void)
                 }
             }    //fin pid_flag
 
+            //llego sync sin haber terminado la senial, la termino
+            if ((sync_on_signal) && (discharge_state != WAIT_FOR_SYNC))
+            {
+                //seteo pwm fast discharge
+                HIGH_LEFT_PWM (0);
+                LOW_RIGHT_PWM (0);
+
+                discharge_state = WAIT_FOR_SYNC;
+                p_signal_running = p_signal;
+                
+#ifdef USE_SOFT_NO_CURRENT
+                current_integral = current_integral_running;
+                current_integral_running = 0;
+                current_integral_ended = 1;
+#endif
+            }
+
             //si la senial esta corriendo hago update de senial y un par de chequeos
             //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
             if (seq_ready)
@@ -788,6 +803,7 @@ void GenerateSignal (void)
                 seq_ready = 0;
 
                 if ((discharge_state == NORMAL_DISCHARGE) ||
+                    (discharge_state == TAU_DISCHARGE) ||
                     (discharge_state == FAST_DISCHARGE))
                 {
                     //-- Soft Overcurrent --//
@@ -807,15 +823,15 @@ void GenerateSignal (void)
                         current_integral_running += I_Sense;
 #endif
                     }
-                    else
-                    {
-                        //si quiero forzar ir a NORMAL_DISCHARGE u otro debo corregir los PWM
-                        LOW_RIGHT_PWM (DUTY_ALWAYS);
+                    else    //termino la senial y no hubo sync previo, me quedo esperando sync
+                    {                        
+                        //seteo pwm fast discharge
                         HIGH_LEFT_PWM (0);
-                        // discharge_state = NORMAL_DISCHARGE;
-                        discharge_state = WAIT_NO_SYNC;
+                        LOW_RIGHT_PWM (0);
                         
+                        discharge_state = WAIT_FOR_SYNC;
                         p_signal_running = p_signal;
+                        
 #ifdef USE_SOFT_NO_CURRENT
                         current_integral = current_integral_running;
                         current_integral_running = 0;

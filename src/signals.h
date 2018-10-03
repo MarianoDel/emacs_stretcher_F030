@@ -63,9 +63,9 @@ typedef enum {
 typedef enum
 {
 	INIT_DISCHARGE = 0,
-        WAIT_NO_SYNC,
-        WAIT_TO_SYNC,        
+        WAIT_FOR_SYNC,        
 	NORMAL_DISCHARGE,
+	TAU_DISCHARGE,        
 	FAST_DISCHARGE,
 	STOPPED_BY_INT
 
