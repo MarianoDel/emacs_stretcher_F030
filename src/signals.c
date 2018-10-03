@@ -119,7 +119,7 @@ const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0
                                                              0,0,0,0,0,0,0,0,0,0,
                                                              0,0,0,0,0,0,0,0,0,0,
                                                              0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,19,38,58,77,
+                                                             0,0,19,38,58,77,
                                                              96,115,134,152,171,189,206,224,240,257,
                                                              273,288,303,318,332,345,358,370,381,392,
                                                              402,412,420,428,435,442,447,452,456,460,
@@ -127,7 +127,7 @@ const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0
                                                              442,435,428,420,412,402,392,381,370,358,
                                                              345,332,318,303,288,273,257,240,224,206,
                                                              189,171,152,134,115,96,77,58,38,19,
-                                                             0,0};
+                                                             0,0,0,0};
 
 const unsigned short s_cuadrada_1_5A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
                                                          465,465,465,465,465,465,465,465,465,465,
@@ -558,10 +558,21 @@ resp_t SetSignalType (signal_type_t a)
 //     return resp_ok;
 // }
 
+//setea la frecuencia y el timer con el que se muestrea
+//por default o error es simepre de 1500Hz -> seniales de 10Hz
 resp_t SetFrequency (frequency_t a)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
+
+    // if (a == TEN_HZ)
+    //     signal_to_gen.freq_table_inc = 1;
+
+    // if (a == THIRTY_HZ)
+    //     signal_to_gen.freq_table_inc = 3;
+
+    // if (a == SIXTY_HZ)
+    //     signal_to_gen.freq_table_inc = 6;
 
     if (a == TEN_HZ)
         signal_to_gen.freq_table_inc = 1;
@@ -571,7 +582,7 @@ resp_t SetFrequency (frequency_t a)
 
     if (a == SIXTY_HZ)
         signal_to_gen.freq_table_inc = 6;
-
+    
     signal_to_gen.frequency = a;
 
     return resp_ok;
@@ -647,6 +658,7 @@ void GenerateSignalReset (void)
 //cada muestra seq_ready llega a 1500Hz
 //TODO: mejorar esto dar al pid un par de cuentas para cada muestra, si la senial es de 0
 //descargar rapido y apagar
+#define TAU_SPACE    0
 void GenerateSignal (void)
 {
     if (!protected)
@@ -712,7 +724,7 @@ void GenerateSignal (void)
                                   I_Sense, d);
 
                     //el tau se resuelve aca
-                    if (d < -5)    //doy -5 de espacio para TAU
+                    if (d < TAU_SPACE)    //doy -5 de espacio para TAU
                     {
                         HIGH_LEFT_PWM(0);
                         discharge_state = FAST_DISCHARGE;
@@ -745,7 +757,7 @@ void GenerateSignal (void)
                                   I_Sense_negado, d);	//OJO cambiar este pid
 
                     //reviso si necesito cambiar a descarga por tau o normal
-                    if (d < -5)
+                    if (d < TAU_SPACE)
                     {
                         if (-d < DUTY_100_PERCENT)
                             LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
@@ -770,6 +782,7 @@ void GenerateSignal (void)
             }    //fin pid_flag
 
             //si la senial esta corriendo hago update de senial y un par de chequeos
+            //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
             if (seq_ready)
             {
                 seq_ready = 0;

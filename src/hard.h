@@ -37,8 +37,8 @@
 #define USE_SOFT_NO_CURRENT
 
 //parametros del PID fijos en flash o variables en RAM
-// #define USE_PARAMETERS_IN_FLASH
-#define USE_PARAMETERS_IN_RAM
+#define USE_PARAMETERS_IN_FLASH
+// #define USE_PARAMETERS_IN_RAM
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS

@@ -42,15 +42,15 @@ short d_last = 0;
 // #define KIV	16			// 0.125
 // #define KDV	0			// 0
 
-// // //lindos parametros de triangular
-// #define KPV	640			// 5 desde python PI_zpk_KpKi.py
-// #define KIV	128			// 0.125
-// #define KDV	0			// 0
-
-// //lindos parametros de cuadrada
-#define KPV	640			// 5 desde python PI_zpk_KpKi.py
-#define KIV	200			// 2
+// //lindos parametros de triangular
+#define KPV	128			// 5 desde python PI_zpk_KpKi.py
+#define KIV	16			// 0.125
 #define KDV	0			// 0
+
+// // //lindos parametros de cuadrada
+// #define KPV	640			// 5 desde python PI_zpk_KpKi.py
+// #define KIV	200			// 2
+// #define KDV	0			// 0
 
 //todos se dividen por 128
 #define KPI	128			// 1
