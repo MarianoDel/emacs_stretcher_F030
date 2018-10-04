@@ -196,24 +196,28 @@ resp_t InterpretarMsg (void)
             switch (GetErrorStatus())
             {
             case ERROR_OK:
-                sprintf(b, "Manager status: %d\n", GetTreatmentState());
+                sprintf(b, "%s Manager status: %d\n", p_own_channel, GetTreatmentState());
                 Usart1Send(b);
                 break;
 
             case ERROR_OVERCURRENT:
-                Usart1Send("Error: Overcurrent\n");
+                sprintf(b, "%s Error: Overcurrent\n", p_own_channel);
+                Usart1Send(b);
                 break;
 
             case ERROR_NO_CURRENT:
-                Usart1Send("Error: No current\n");
+                sprintf(b, "%s Error: No current\n", p_own_channel);
+                Usart1Send(b);
                 break;
 
             case ERROR_SOFT_OVERCURRENT:
-                Usart1Send("Error: Soft Overcurrent\n");
+                sprintf(b, "%s Error: Soft Overcurrent\n", p_own_channel);
+                Usart1Send(b);
                 break;
 
             case ERROR_OVERTEMP:
-                Usart1Send("Error: Overtemp\n");
+                sprintf(b, "%s Error: Overtemp\n", p_own_channel);
+                Usart1Send(b);
                 break;
 
             }
