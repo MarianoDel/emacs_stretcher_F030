@@ -1,10 +1,12 @@
-/*
- * hard.c
- *
- *  Created on: 28/03/2017
- *      Author: Mariano
- */
-
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### HARD.C ################################
+//---------------------------------------------
 #include "hard.h"
 #include "stm32f0xx.h"
 

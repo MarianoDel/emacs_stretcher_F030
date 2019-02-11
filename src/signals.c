@@ -1,3 +1,13 @@
+//------------------------------------------------
+// #### PROYECTO STRETCHER F030 - Power Board ####
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### SIGNALS.C ################################
+//------------------------------------------------
 
 /* Includes ------------------------------------------------------------------*/
 #include "signals.h"
@@ -5,6 +15,7 @@
 #include "stm32f0xx.h"
 #include "tim.h"
 #include "dsp.h"
+#include "dma.h"
 #include "adc.h"
 
 #include "uart.h"
@@ -19,19 +30,18 @@ extern volatile unsigned short adc_ch[];
 
 //del Main
 extern volatile unsigned short timer_signals;
-extern volatile unsigned char pid_flag;
+
 
 //de usart para sync
 extern volatile unsigned char sync_on_signal;
 
 //del pid dsp.c
-#ifdef USE_PARAMETERS_IN_RAM
 extern unsigned short pid_param_p;
 extern unsigned short pid_param_i;
 extern unsigned short pid_param_d;
-#endif
 
-//--- VARIABLES GLOBALES ---//
+
+/* Global variables ---------------------------------------------------------*/
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
 discharge_state_t discharge_state = INIT_DISCHARGE;
@@ -40,15 +50,18 @@ unsigned char global_error = 0;
 unsigned short * p_signal;
 unsigned short * p_signal_running;
 
-short d = 0;
-
 unsigned char protected = 0;
 unsigned char signals_without_sync_counter = 0;
+
+short d = 0;
+short ez1 = 0;
+short ez2 = 0;
+
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
 unsigned short soft_overcurrent_max_current_in_cycles [SIZEOF_OVERCURRENT_BUFF];
-unsigned short soft_overcurrent_treshold = 0;
+unsigned short soft_overcurrent_threshold = 0;
 unsigned short soft_overcurrent_index = 0;
 #endif
 
@@ -245,7 +258,11 @@ const unsigned short s_triangular_6A [SIZEOF_SIGNALS] = {0,11,23,35,47,59,71,83,
                                                          0,0,0,0,0,0,0,0,0};
 
 
-//--- FUNCIONES DEL MODULO ---//
+// Private Module Functions ------------------------------
+void Signal_UpdatePointerReset (void);
+resp_t Signal_UpdatePointer (void);
+
+// Module Functions --------------------------------------
 void TreatmentManager (void)
 {
     switch (treatment_state)
@@ -273,7 +290,7 @@ void TreatmentManager (void)
 
 #ifdef USE_SOFT_OVERCURRENT
             //cargo valor maximo de corriente para el soft_overcurrent
-            soft_overcurrent_treshold = 1.2 * I_MAX * signal_to_gen.power / 100;
+            soft_overcurrent_threshold = 1.2 * I_MAX * signal_to_gen.power / 100;
             soft_overcurrent_index = 0;
 
             for (unsigned char i = 0; i < SIZEOF_OVERCURRENT_BUFF; i++)
@@ -308,7 +325,7 @@ void TreatmentManager (void)
 #ifdef USE_SOFT_OVERCURRENT
         //TODO: poner algun synchro con muestras para que no ejecute el filtro todo el tiempo
         //soft current overload check
-        if (MAFilter8 (soft_overcurrent_max_current_in_cycles) > soft_overcurrent_treshold)
+        if (MAFilter8 (soft_overcurrent_max_current_in_cycles) > soft_overcurrent_threshold)
         {
             treatment_state = TREATMENT_STOPPING;
             SetErrorStatus(ERROR_SOFT_OVERCURRENT);
@@ -662,203 +679,210 @@ void GenerateSignalReset (void)
 #define HOW_MANY_ZEROS_TO_ZERO    3
 void GenerateSignal (void)
 {
-    if (!protected)
+    //en este bloque tomo la nueva muestra del ADC
+    //hago update de la senial antes de cada PID
+    //luego calculo el PID y los PWM que correspondan
+    if (sequence_ready)
     {
-        if (!STOP_JUMPER)
+        sequence_ready_reset;    //aprox 7KHz synchro con pwm
+        if (LED)
+            LED_OFF;
+        else
+            LED_ON;
+
+        switch (discharge_state)
         {
-            if (pid_flag)
-            {
-                pid_flag = 0;    //aprox 7KHz synchro con pwm
+        case INIT_DISCHARGE:			//arranco siempre con descarga por TAU
+            HIGH_LEFT_PWM(0);
+            LOW_RIGHT_PWM(DUTY_ALWAYS);
+            discharge_state = WAIT_FOR_SYNC;
+            Signal_UpdatePointerReset();
 
-                switch (discharge_state)
-                {
-                case INIT_DISCHARGE:			//arranco siempre con descarga por TAU
-                    HIGH_LEFT_PWM(0);
-                    LOW_RIGHT_PWM(DUTY_ALWAYS);
-                    discharge_state = WAIT_FOR_SYNC;
-                    p_signal_running = p_signal;
+            //sync
+            signals_without_sync_counter = 0;
+            sync_on_signal = 0;
 
-                    //sync
-                    signals_without_sync_counter = 0;
-                    sync_on_signal = 0;
-
-                    //no current
+            //no current
 #ifdef USE_SOFT_NO_CURRENT
-                    current_integral_running = 0;
-                    current_integral_ended = 0;
+            current_integral_running = 0;
+            current_integral_ended = 0;
 #endif
-                    break;
+            break;
 
-                case WAIT_FOR_SYNC:
-                    if (sync_on_signal)
-                    {
-                        sync_on_signal = 0;
-                        signals_without_sync_counter = SIGNALS_WITHOUT_SYNC;
-                        discharge_state++;
-                        // zeroes_sp = 0;
-                        //seteo pwm normal discharge
-                        LOW_RIGHT_PWM (DUTY_ALWAYS);
-                        HIGH_LEFT_PWM (0);
-                    }
-                    break;
-                    
-                case NORMAL_DISCHARGE:
-
-                    d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                                  I_Sense, d);
-
-                    //reviso si necesito cambiar a descarga por tau
-                    if (d < 0)
-                    {
-                        HIGH_LEFT_PWM(0);
-                        discharge_state = TAU_DISCHARGE;
-                        d = 0;	//limpio para pid descarga
-                    }
-                    else
-                    {
-                        if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-                            d = DUTY_95_PERCENT;
-
-                        HIGH_LEFT_PWM(d);
-                    }
-                    break;
-
-                case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
-
-                    d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                                  I_Sense, d);	//OJO cambiar este pid
-
-                    //reviso si necesito cambiar a descarga rapida
-                    if (d < 0)
-                    {
-                        if (-d < DUTY_100_PERCENT)
-                            LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-                        else
-                            LOW_RIGHT_PWM(0);    //descarga maxima
-
-                        discharge_state = FAST_DISCHARGE;
-                    }
-                    else
-                    {
-                        //esto es normal
-                        if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-                            d = DUTY_95_PERCENT;
-
-                        HIGH_LEFT_PWM(d);
-                        discharge_state = NORMAL_DISCHARGE;
-                    }
-                    break;
-
-                case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
-
-                    d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                                  I_Sense_negado, d);	//OJO cambiar este pid
-
-                    //reviso si necesito cambiar a descarga por tau o normal
-                    if (d < TAU_SPACE)
-                    {
-                        if (-d < DUTY_100_PERCENT)
-                            LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-                        else
-                            LOW_RIGHT_PWM(0);    //descarga maxima
-                    }
-                    else
-                    {
-                        //vuelvo a TAU_DISCHARGE
-                        LOW_RIGHT_PWM(DUTY_ALWAYS);
-                        discharge_state = TAU_DISCHARGE;
-                    }
-                    break;
-
-                case STOPPED_BY_INT:		//lo freno la interrupcion
-                    break;
-
-                default:
-                    discharge_state = INIT_DISCHARGE;
-                    break;
-                }
-            }    //fin pid_flag
-
-            //llego sync sin haber terminado la senial, la termino
-            if ((sync_on_signal) && (discharge_state != WAIT_FOR_SYNC))
+        case WAIT_FOR_SYNC:
+            if (sync_on_signal)
             {
-                //seteo pwm fast discharge
+                sync_on_signal = 0;
+                signals_without_sync_counter = SIGNALS_WITHOUT_SYNC;
+                discharge_state++;
+                // zeroes_sp = 0;
+                //seteo pwm normal discharge
+                LOW_RIGHT_PWM (DUTY_ALWAYS);
                 HIGH_LEFT_PWM (0);
-                LOW_RIGHT_PWM (0);
+            }
+            break;
+                    
+        case NORMAL_DISCHARGE:
+            if (Signal_UpdatePointer() == resp_continue)
+            {
+                d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                              I_Sense,
+                              d,
+                              &ez1,
+                              &ez2);
+                    
+                //reviso si necesito cambiar a descarga por tau
+                if (d < 0)
+                {
+                    HIGH_LEFT_PWM(0);
+                    discharge_state = TAU_DISCHARGE;
+                    d = 0;	//limpio para pid descarga
+                }
+                else
+                {
+                    if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+                        d = DUTY_95_PERCENT;
 
+                    HIGH_LEFT_PWM(d);
+                }
+            }
+            else    //termine la senial
                 discharge_state = WAIT_FOR_SYNC;
-                p_signal_running = p_signal;
+            
+            break;
+
+        case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
+            if (Signal_UpdatePointer() == resp_continue)
+            {
+                d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                              I_Sense,
+                              d,
+                              &ez1,
+                              &ez2);
+
+                //reviso si necesito cambiar a descarga rapida
+                if (d < 0)
+                {
+                    if (-d < DUTY_100_PERCENT)
+                        LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
+                    else
+                        LOW_RIGHT_PWM(0);    //descarga maxima
+
+                    discharge_state = FAST_DISCHARGE;
+                }
+                else
+                {
+                    //esto es normal
+                    if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+                        d = DUTY_95_PERCENT;
+
+                    HIGH_LEFT_PWM(d);
+                    discharge_state = NORMAL_DISCHARGE;
+                }
+            }
+            else    //termine la senial                
+                discharge_state = WAIT_FOR_SYNC;
+            
+            break;
+
+        case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
+            if (Signal_UpdatePointer() == resp_continue)
+            {
+                d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                              I_Sense_negado,
+                              d,
+                              &ez1,
+                              &ez2);
+
+                //reviso si necesito cambiar a descarga por tau o normal
+                if (d < TAU_SPACE)
+                {
+                    if (-d < DUTY_100_PERCENT)
+                        LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
+                    else
+                        LOW_RIGHT_PWM(0);    //descarga maxima
+                }
+                else
+                {
+                    //vuelvo a TAU_DISCHARGE
+                    LOW_RIGHT_PWM(DUTY_ALWAYS);
+                    discharge_state = TAU_DISCHARGE;
+                }
+            }
+            else    //termine la senial
+                discharge_state = WAIT_FOR_SYNC;
+            
+            break;
+
+        case STOPPED_BY_INT:		//lo freno la interrupcion
+            break;
+
+        default:
+            discharge_state = INIT_DISCHARGE;
+            break;
+        }
+    }    //fin sequence_ready
+
+    //en este bloque reviso si llego un nuevo sincronismo
+    //llego sync sin haber terminado la senial, la termino
+    if ((sync_on_signal) && (discharge_state != WAIT_FOR_SYNC))
+    {
+        //seteo pwm fast discharge
+        SIGNAL_FAST_DISCHARGE;
+
+        discharge_state = WAIT_FOR_SYNC;
+        Signal_UpdatePointerReset();
                 
 #ifdef USE_SOFT_NO_CURRENT
-                current_integral = current_integral_running;
-                current_integral_running = 0;
-                current_integral_ended = 1;
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
 #endif
-            }
-
-            //si la senial esta corriendo hago update de senial y un par de chequeos
-            //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
-            if (seq_ready)
-            {
-                seq_ready = 0;
-
-                if ((discharge_state == NORMAL_DISCHARGE) ||
-                    (discharge_state == TAU_DISCHARGE) ||
-                    (discharge_state == FAST_DISCHARGE))
-                {
-                    //-- Soft Overcurrent --//
-#ifdef USE_SOFT_OVERCURRENT
-                    soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
-                    if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
-                        soft_overcurrent_index++;
-                    else
-                        soft_overcurrent_index = 0;
-#endif
-
-                    //-- Signal Update --//
-                    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
-                    {
-                        p_signal_running += signal_to_gen.freq_table_inc;
-#ifdef USE_SOFT_NO_CURRENT
-                        current_integral_running += I_Sense;
-#endif
-                    }
-                    else    //termino la senial y no hubo sync previo, me quedo esperando sync
-                    {                        
-                        //seteo pwm fast discharge
-                        HIGH_LEFT_PWM (0);
-                        LOW_RIGHT_PWM (0);
-                        
-                        discharge_state = WAIT_FOR_SYNC;
-                        p_signal_running = p_signal;
-                        
-#ifdef USE_SOFT_NO_CURRENT
-                        current_integral = current_integral_running;
-                        current_integral_running = 0;
-                        current_integral_ended = 1;
-#endif
-                    }
-                }    //fin if signal running
-            }    //cierra sequence        
-        }    //cierra jumper protected
-        else
-        {
-            //me piden que no envie senial y proteja
-            HIGH_LEFT_PWM(0);
-            LOW_RIGHT_PWM(0);
-            protected = 1;
-        }
-    }    //cierra variable protect
-    else
-    {
-        //estoy protegido reviso si tengo que salir
-        if (!STOP_JUMPER)
-        {
-            //tengo que salir del modo
-            protected = 0;
-            LOW_RIGHT_PWM(DUTY_ALWAYS);
-        }
     }
+}
+
+inline void Signal_UpdatePointerReset (void)
+{
+    p_signal_running = p_signal;
+}
+
+resp_t Signal_UpdatePointer (void)
+{
+    resp_t resp = resp_continue;
+    //si la senial esta corriendo hago update de senial y un par de chequeos
+    //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
+
+    //-- Signal Update --//
+    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
+    {
+        p_signal_running += signal_to_gen.freq_table_inc;
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral_running += I_Sense;
+#endif
+    }
+    else    //termino la senial seteo fast dischrage y aviso
+    {                        
+        //seteo pwm fast discharge
+        SIGNAL_FAST_DISCHARGE;
+        Signal_UpdatePointerReset();
+        
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
+#endif
+        resp = resp_ended;
+    }
+
+    //-- Soft Overcurrent --//
+#ifdef USE_SOFT_OVERCURRENT
+    soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
+    if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
+        soft_overcurrent_index++;
+    else
+        soft_overcurrent_index = 0;
+#endif
+    return resp;
 }
 
 //hubo sobrecorriente, me llaman desde la interrupcion

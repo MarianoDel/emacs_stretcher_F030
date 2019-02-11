@@ -1,18 +1,21 @@
-/*
- * adc.h
- *
- *  Created on: 10/09/2014
- *      Author: Mariano
- */
+//---------------------------------------------
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### ADC.H #################################
+//---------------------------------------------
+#ifndef _ADC_H_
+#define _ADC_H_
 
-#ifndef ADC_H_
-#define ADC_H_
-
-#include "hard.h"		//por configuracion
+#include "hard.h"    //conf de versiones
 
 //----------- Defines For Configuration --------------//
 //----------- Some ADC Configurations ----------------//
-#define ADC_WITH_INT
+// #define ADC_WITH_INT
+#define ADC_WITH_DMA
+
 #ifdef WITH_TEMP_CONTROL
 #define ADC_WITH_TEMP_SENSE
 #endif
@@ -22,10 +25,19 @@
 #endif
 //----------- End of ADC Configurations --------------//
 
-#ifdef ADC_WITH_INT
-#define Input_Signal		adc_ch[0]
-#define I_Sense			adc_ch[1]
-#define I_Sense_negado	adc_ch[2]
+#ifdef VER_2_0
+#define I_Sense           adc_ch[0]
+#define I_Sense_negado    adc_ch[1]
+#define ADC_CHANNEL_QUANTITY         2
+#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
+#endif
+
+#if (defined VER_1_0) || (defined VER_1_1)
+#define Input_Signal      adc_ch[0]
+#define I_Sense           adc_ch[1]
+#define I_Sense_negado    adc_ch[2]
+#define ADC_CHANNEL_QUANTITY         3
+#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
 #endif
 
 
@@ -143,19 +155,18 @@
 
 #define CALIBRATION_TIMEOUT       ((uint32_t)0x0000F000)
 
-
+//--- Exported Module Functions ------------
 void AdcConfig (void);
 unsigned short ReadADC1 (unsigned int);
 unsigned short ReadADC1_SameSampleTime (unsigned int);
 void SetADC1_SampleTime (void);
 unsigned short ReadADC1Check (unsigned char);
 unsigned int ADCGetCalibrationFactor (void);
+
+#ifdef ADC_WITH_TEMP_SENSE
 void UpdateTemp(void);
 unsigned short GetTemp (void);
-short ConvertTemp (unsigned short );
-void UpdatePhotoTransistor(void);
-unsigned short GetPhoto (void);
 void FillTempBuffer (void);
-void FillPhotoBuffer (void);
-
-#endif /* ADC_H_ */
+short ConvertTemp (unsigned short);
+#endif
+#endif /* _ADC_H_ */

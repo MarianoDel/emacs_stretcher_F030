@@ -1,12 +1,14 @@
-/*
- * hard.h
- *
- *  Created on: 28/11/2013
- *      Author: Mariano
- */
-
-#ifndef HARD_H_
-#define HARD_H_
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### HARD.H ################################
+//---------------------------------------------
+#ifndef _HARD_H_
+#define _HARD_H_
 
 
 //----------- Defines For Configuration -------------
@@ -17,7 +19,8 @@
 
 //----------- Hardware Board Version -------------
 // #define VER_1_0
-#define VER_1_1		//mismo pinout que VER_1_0
+// #define VER_1_1		//mismo pinout que VER_1_0
+#define VER_2_0		//micro en placa grande
 
 //-------- Type of Program ----------------
 #define POWER_WITH_MANAGEMENT
@@ -36,10 +39,6 @@
 //Si utiliza la proteccion de no current
 #define USE_SOFT_NO_CURRENT
 
-//parametros del PID fijos en flash o variables en RAM
-// #define USE_PARAMETERS_IN_FLASH
-#define USE_PARAMETERS_IN_RAM
-
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS
 // #define USART_SINGLE
@@ -57,7 +56,7 @@
 
 //-------- End Of Defines For Configuration ------
 
-#if (defined VER_1_0 || defined VER_1_1)
+#if (defined VER_1_0) || (defined VER_1_1) || (defined VER_2_0)
 //GPIOA pin0	Input_Signal
 //GPIOA pin1	I_Sense
 
@@ -139,4 +138,4 @@ void ChangeLed (unsigned char);
 void UpdateLed (void);
 
 
-#endif /* HARD_H_ */
+#endif /* _HARD_H_ */

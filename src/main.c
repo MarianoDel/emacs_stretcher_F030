@@ -1,12 +1,12 @@
-//---------------------------------------------
-// #### PROYECTO STRETCHER MAGNETO - Custom Board ####
+//------------------------------------------------
+// #### PROYECTO STRETCHER F030 - Power Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ##
-// #### MAIN.C ################################
-//---------------------------------------------
+// #### MAIN.C ###################################
+//------------------------------------------------
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx.h"
@@ -24,9 +24,10 @@
 
 #include "core_cm0.h"
 #include "adc.h"
+#include "dma.h"
 #include "flash_program.h"
 
-#include "stm32f0xx_it.h"
+#include "it.h"
 
 
 
@@ -34,7 +35,7 @@
 // ------- Externals de Timers  ------
 volatile unsigned short timer_signals = 0;
 volatile unsigned short timer_led = 0;
-volatile unsigned char pid_flag = 0;
+
 
 // ------- Externals del Puerto serie  -------
 // volatile unsigned char tx1buff[SIZEOF_DATA];
@@ -45,17 +46,13 @@ volatile unsigned char usart1_have_data = 0;
 volatile unsigned char sync_on_signal = 0;
 
 // ------- Externals del o para el ADC -------
-#ifdef ADC_WITH_INT
-volatile unsigned short adc_ch[3];
+volatile unsigned short adc_ch[ADC_CHANNEL_QUANTITY];
 volatile unsigned char seq_ready = 0;
-#endif
 
 // ------- Externals del PID dsp.c -------
-#ifdef USE_PARAMETERS_IN_RAM
 unsigned short pid_param_p = 0;
 unsigned short pid_param_i = 0;
 unsigned short pid_param_d = 0;
-#endif
 
 // ------- Externals para filtros -------
 unsigned short mains_voltage_filtered;
@@ -195,9 +192,8 @@ int main(void)
     //--- Fin Prueba LED y USART RX ---//
 
 //---------- Pruebas de Hardware --------//
-    AdcConfig();		//recordar habilitar sensor en adc.h
 
-    TIM_1_Init ();					//lo utilizo para synchro ADC muestras 1500Hz
+    TIM_1_Init ();    //lo utilizo para synchro ADC muestras 1500Hz
     TIM_3_Init ();    //lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
                       //tambien lo activo para hacer mas cuentas en el pid
 
@@ -255,10 +251,14 @@ int main(void)
     // 	Wait_ms(20);
     // }
 
-    //CUADRADA alta izquierda
-    //--- Prueba ADC y synchro ---//
-    ADC1->CR |= ADC_CR_ADSTART;	//1500Hz con TIM1
-    seq_ready = 0;
+    //Activo el ADC con DMA
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
 
     for (i = 0; i < (3 * OWN_CHANNEL); i++)
     {

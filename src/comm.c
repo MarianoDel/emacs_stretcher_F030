@@ -1,5 +1,13 @@
-
-/* Includes ------------------------------------------------------------------*/
+//------------------------------------------------
+// #### PROYECTO STRETCHER F030 - Power Board ####
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### COMM.C ###################################
+//------------------------------------------------
 #include "comm.h"
 #include "signals.h"
 #include "uart.h"
@@ -10,15 +18,15 @@
 #include <stdio.h>
 
 
-
-//--- VARIABLES EXTERNAS ---//
-//del main
+/* Externals variables ---------------------------------------------------------*/
+//--- del main
 extern const char s_ok [];
-// ------- Externals del Puerto serie  -------
+//--- del Puerto serie  -------
 extern unsigned char usart1_have_data;
 
-//--- VARIABLES GLOBALES ---//
-//globales de este modulo
+/* Global variables ---------------------------------------------------------*/
+char buffMessages [100];
+const char * p_own_channel;
 
 //strings de comienzo o lineas intermedias
 const char s_ch1 [] = {"ch1"};
@@ -47,11 +55,7 @@ const char s_flush_errors [] = {"flush errors"};
 const char s_getall [] = {"get all conf"};
 
 
-char buffMessages [100];
-const char * p_own_channel;
-
-
-//--- FUNCIONES DEL MODULO ---//
+/* Module functions ---------------------------------------------------------*/
 void SetOwnChannel (unsigned char ch)
 {
     if (ch == 1)
@@ -278,3 +282,5 @@ resp_t InterpretarMsg (void)
 
     return resp;
 }
+
+//--- end of file ---//

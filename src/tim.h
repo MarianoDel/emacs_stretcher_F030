@@ -1,21 +1,13 @@
-/**
-  ******************************************************************************
-  * @file    Template_2/main.h
-  * @author  Nahuel
-  * @version V1.0
-  * @date    22-August-2014
-  * @brief   Header for tim module
-  ******************************************************************************
-  * @attention
-  *
-  *
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F0X_TIM_H
-#define __STM32F0X_TIM_H
+//---------------------------------------------
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### TIM.C ################################
+//---------------------------------------------
+#ifndef _TIM_H_
+#define _TIM_H_
 
 //--- Exported types ---//
 //--- Exported constants ---//
@@ -84,8 +76,7 @@ void TIM16Enable (void);
 void TIM16Disable (void);
 
 void Wait_ms (unsigned short wait);
-#endif
-//--- End ---//
 
+#endif    /* _TIM_H_ */
 
-//--- END OF FILE ---//
+//--- end of file ---//

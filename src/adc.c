@@ -1,18 +1,21 @@
-/*
- * adc.c
- *
- *  Created on: 04/05/2015
- *      Author: Mariano
- */
+//---------------------------------------------
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### ADC.C #################################
+//---------------------------------------------
+
+/* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 #include "stm32f0xx.h"
 #include "hard.h"
-// #include "dsp.h"
 
 
-//--- VARIABLES EXTERNAS ---//
+/* Externals ------------------------------------------------------------------*/
 extern volatile unsigned short adc_ch [];
-extern volatile unsigned short tt_take_photo_sample;
+
 
 #ifdef ADC_WITH_INT
 extern volatile unsigned char seq_ready;
@@ -22,7 +25,7 @@ extern volatile unsigned char seq_ready;
 extern volatile unsigned short tt_take_temp_sample;
 #endif
 
-//--- VARIABLES GLOBALES ---//
+/* Globals ------------------------------------------------------------------*/
 #ifdef ADC_WITH_INT
 volatile unsigned short * p_channel;
 #endif
@@ -35,16 +38,8 @@ unsigned char board_temp_index = 0;
 unsigned char new_temp_sample = 0;
 #endif
 
-// ------- del PhotoTransistor -------
-#define SIZEOF_PHOTO_TRANS		32
-#define DIVISOR_PHOTO			5
-unsigned short VoltagePhoto [SIZEOF_PHOTO_TRANS];
-unsigned char photo_index = 0;
-unsigned short last_photo = 0;
-unsigned char new_photo_sample = 0;
 
-
-
+/* Module Functions -----------------------------------------------------------*/
 //Single conversion mode (CONT=0)
 //In Single conversion mode, the ADC performs a single sequence of conversions,
 //converting all the channels once.
@@ -60,60 +55,75 @@ unsigned char new_photo_sample = 0;
 
 void AdcConfig (void)
 {
-	if (!RCC_ADC_CLK)
-		RCC_ADC_CLK_ON;
+    if (!RCC_ADC_CLK)
+        RCC_ADC_CLK_ON;
 
-	// preseteo los registros a default, la mayoria necesita tener ADC apagado
-	ADC1->CR = 0x00000000;
-	ADC1->IER = 0x00000000;
-	ADC1->CFGR1 = 0x00000000;
-	ADC1->CFGR2 = 0x00000000;
-	ADC1->SMPR = 0x00000000;
-	ADC1->TR = 0x0FFF0000;
-	ADC1->CHSELR = 0x00000000;
+    // preseteo los registros a default, la mayoria necesita tener ADC apagado
+    ADC1->CR = 0x00000000;
+    ADC1->IER = 0x00000000;
+    ADC1->CFGR1 = 0x00000000;
+    ADC1->CFGR2 = 0x00000000;
+    ADC1->SMPR = 0x00000000;
+    ADC1->TR = 0x0FFF0000;
+    ADC1->CHSELR = 0x00000000;
 
-	//set clock
-	ADC1->CFGR2 = ADC_ClockMode_SynClkDiv4;
+    //set clock
+    ADC1->CFGR2 = ADC_ClockMode_SynClkDiv4;
 
-	//set resolution, trigger & Continuos or Discontinuous
-	// ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
-	ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T1_TRGO;
-	//ADC1->CFGR1 |= ADC_Resolution_12b | ADC_CFGR1_DISCEN;
-	// ADC1->CFGR1 |= ADC_Resolution_12b;
+    //set resolution, trigger & Continuos or Discontinuous
+    // ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
+    ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T1_TRGO;
+    //ADC1->CFGR1 |= ADC_Resolution_12b | ADC_CFGR1_DISCEN;
+    // ADC1->CFGR1 |= ADC_Resolution_12b;
 
-	//DMA Config
-	//ADC1->CFGR1 |= ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG;
+    //DMA Config
+    //ADC1->CFGR1 |= ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG;
 
-	//set sampling time
-	ADC1->SMPR |= ADC_SampleTime_41_5Cycles;		//17.39 son SP 420
-	// ADC1->SMPR |= ADC_SampleTime_28_5Cycles;		//17.39 son SP 420
-	//ADC1->SMPR |= ADC_SampleTime_7_5Cycles;		//17.36 de salida son SP 420 pero a veces pega
-													//las dos int (usar DMA?) y pierde el valor intermedio
-	//ADC1->SMPR |= ADC_SampleTime_1_5Cycles;			//20.7 de salida son SP 420 (regula mal)
+    //set sampling time
+    // ADC1->SMPR |= ADC_SampleTime_71_5Cycles;
+    ADC1->SMPR |= ADC_SampleTime_41_5Cycles;		//17.39 son SP 420    
+    // ADC1->SMPR |= ADC_SampleTime_28_5Cycles;		//17.39 son SP 420
+    //ADC1->SMPR |= ADC_SampleTime_7_5Cycles;		//17.36 de salida son SP 420 pero a veces pega
+    //las dos int (usar DMA?) y pierde el valor intermedio
+    //ADC1->SMPR |= ADC_SampleTime_1_5Cycles;			//20.7 de salida son SP 420 (regula mal)
 
-#ifdef ADC_WITH_INT
-	//set channel selection
-	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_3;
+    //set channel selection
+#ifdef VER_2_0
+    ADC1->CHSELR |= ADC_Channel_1 | ADC_Channel_3;
+#endif
 
-	//set interrupts
-	ADC1->IER |= ADC_IT_EOC;
+#ifdef VER_1_1
+    ADC1->CHSELR |= ADC_Channel_1 | ADC_Channel_3;
+#endif
 
-	//set pointer
-	p_channel = &adc_ch[0];
+#ifdef VER_1_0
+    ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1;
+#endif
+    
+#ifdef ADC_WITH_INT        
+    //set interrupts
+    ADC1->IER |= ADC_IT_EOC;
 
-	NVIC_EnableIRQ(ADC1_IRQn);
-	NVIC_SetPriority(ADC1_IRQn, 3);
+    //set pointer
+    p_channel = &adc_ch[0];
+
+    NVIC_EnableIRQ(ADC1_IRQn);
+    NVIC_SetPriority(ADC1_IRQn, 3);
 #endif
 
 #ifdef ADC_WITH_TEMP_SENSE
-	ADC->CCR |= ADC_CCR_TSEN;
+    ADC->CCR |= ADC_CCR_TSEN;
 #endif
 
-	//calibrar ADC
-	ADCGetCalibrationFactor();
+    //calibrar ADC
+    ADCGetCalibrationFactor();
 
-	// Enable ADC1
-	ADC1->CR |= ADC_CR_ADEN;
+#ifdef ADC_WITH_DMA
+    ADC1->CFGR1 |= ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG;
+#endif
+    
+    // Enable ADC1
+    ADC1->CR |= ADC_CR_ADEN;
 }
 
 #ifdef ADC_WITH_INT
@@ -304,55 +314,6 @@ short ConvertTemp (unsigned short adc_temp)
 }
 #endif //ADC_WITH_TEMP_SENSE
 
-// void UpdatePhotoTransistor(void)
-// {
-// 	//hago update cada 1 seg
-// 	if (!tt_take_photo_sample)
-// 	{
-// 		tt_take_photo_sample = 1000;
-//
-// 		// VoltagePhoto [photo_index] = ReadADC1_SameSampleTime(ADC_CH1);
-// 		VoltagePhoto [photo_index] = Light_Sense;
-//
-// 		if (photo_index < (SIZEOF_PHOTO_TRANS - 1))
-// 			photo_index++;
-// 		else
-// 			photo_index = 0;
-//
-// 		new_photo_sample = 1;
-// 	}
-// }
-//
-// void FillPhotoBuffer (void)
-// {
-// 	unsigned char i;
-// 	unsigned short dummy;
-//
-// 	// dummy = ReadADC1_SameSampleTime(ADC_CH1);
-// 	dummy = Light_Sense;
-//
-// 	for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
-// 		 VoltagePhoto[i] = dummy;
-//
-// }
-//
-// //devuelve el valor promedio del PhotoTransistor
-// //si existen nuevas muestras hace la cuenta, sino contesta el ultimo valor calculado
-// unsigned short GetPhoto (void)
-// {
-//     unsigned char i;
-//     unsigned int t = 0;
-//
-//     if (new_photo_sample)
-//     {
-//         for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
-//         {
-//             t += VoltagePhoto[i];
-//         }
-//
-//         last_photo = t >> DIVISOR_PHOTO;
-//         new_photo_sample = 0;
-//     }
-//
-//     return last_photo;
-// }
+//--- end of file ---//
+
+

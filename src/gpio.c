@@ -1,19 +1,12 @@
-/**
-  ******************************************************************************
-  * @file    Template_2/stm32f0_gpio.c
-  * @author  Nahuel
-  * @version V1.0
-  * @date    22-August-2014
-  * @brief   GPIO functions.
-  ******************************************************************************
-  * @attention
-  *
-  * Use this functions to configure global inputs/outputs.
-  *
-  ******************************************************************************
-  */
-
-/* Includes ------------------------------------------------------------------*/
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### GPIO.C ################################
+//---------------------------------------------
 #include "stm32f0xx.h"
 #include "gpio.h"
 #include "hard.h"
@@ -61,7 +54,8 @@ void GPIO_Config (void)
     //10: Pull-down
     //11: Reserved
 
-#if (defined VER_1_0) || (defined VER_1_1)
+#if (defined VER_1_0) || (defined VER_1_1) || (defined VER_2_0)
+        
     //--- GPIO A ---//
     if (!GPIOA_CLK)
         GPIOA_CLK_ON;

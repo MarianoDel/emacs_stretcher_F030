@@ -1,6 +1,15 @@
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SIGNALS_H
-#define __SIGNALS_H
+//------------------------------------------------
+// #### PROYECTO STRETCHER F030 - Power Board ####
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### SIGNALS.H ################################
+//------------------------------------------------
+#ifndef _SIGNALS_H_
+#define _SIGNALS_H_
 #include "comm.h"		//para respuestas
 
 
@@ -94,6 +103,12 @@ typedef enum
 
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
+#define SIGNAL_FAST_DISCHARGE do {\
+        HIGH_LEFT_PWM (0);\
+        LOW_RIGHT_PWM (0);\
+    } while (0)
+
+
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);
 resp_t SetSignalType (signal_type_t);
@@ -112,6 +127,7 @@ void TreatmentManager (void);
 void Overcurrent_Shutdown (void);
 void TreatmentManager_IntSpeed (void);
 
-#endif
-//--- End ---//
-//--- END OF FILE ---//
+#endif    /* _SIGNALS_H_ */
+
+//--- end of file ---//
+

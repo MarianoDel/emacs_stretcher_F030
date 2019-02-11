@@ -1,21 +1,14 @@
-/**
-  ******************************************************************************
-  * @file    Template_2/main.h
-  * @author  Nahuel
-  * @version V1.0
-  * @date    22-August-2014
-  * @brief   Header for gpio module
-  ******************************************************************************
-  * @attention
-  *
-  *
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F0X_UART_H
-#define __STM32F0X_UART_H
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### UART.H ################################
+//---------------------------------------------
+#ifndef _UART_H_
+#define _UART_H_
 
 //--- Exported types ---//
 //--- Exported constants ---//
@@ -50,5 +43,7 @@ void Usart1SendUnsigned(unsigned char *, unsigned char);
 void Usart1SendSingle(unsigned char );
 
 
-#endif
-//--- END OF FILE ---//
+#endif    /* _UART_H_ */
+
+//--- end of file ---//
+
