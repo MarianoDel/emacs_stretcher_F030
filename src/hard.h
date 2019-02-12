@@ -37,7 +37,7 @@
 // #define USE_SOFT_OVERCURRENT
 
 //Si utiliza la proteccion de no current
-#define USE_SOFT_NO_CURRENT
+// #define USE_SOFT_NO_CURRENT
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS
@@ -48,6 +48,11 @@
 //-------- Others Configurations depending on the formers ------------
 #ifdef USART_IN_BUS
 #define USART_TX_OUTPUT_OPEN_DRAIN
+#endif
+
+//cantidad de seniales que permito sin corriente antes de poner error
+#ifdef USE_SOFT_NO_CURRENT
+#define SIGNAL_ADMITED_WITH_NO_CURRENT    5    
 #endif
 
 //-------- Hysteresis Conf ------------------------
@@ -131,6 +136,7 @@ typedef enum
 #define LED_NO_BLINKING    0
 #define LED_TREATMENT_STANDBY    1
 #define LED_TREATMENT_GENERATING    2
+#define LED_TREATMENT_JUMPER_PROTECTED    5
 
 
 /* Module Functions ------------------------------------------------------------*/

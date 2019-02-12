@@ -257,4 +257,6 @@ short PID_roof (short setpoint, short sample, short local_last_d, short * e_z1, 
     return d;
 }
 
-#endif
+#endif    //USE_PID_CONTROLLERS
+
+//--- end of file ---//

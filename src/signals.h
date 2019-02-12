@@ -11,6 +11,7 @@
 #ifndef _SIGNALS_H_
 #define _SIGNALS_H_
 #include "comm.h"		//para respuestas
+#include "hard.h"
 
 
 //--- Exported types ---//
@@ -54,7 +55,9 @@ typedef enum {
 	TREATMENT_START_TO_GENERATE,
 	TREATMENT_GENERATING,
 	TREATMENT_STOPPING,
-	TREATMENT_STOPPING2
+	TREATMENT_STOPPING2,
+        TREATMENT_JUMPER_PROTECTED,
+        TREATMENT_JUMPER_PROTECT_OFF
 
 } treatment_t;
 
@@ -71,12 +74,12 @@ typedef enum {
 //TIPO de descarga y estado de signal
 typedef enum
 {
-	INIT_DISCHARGE = 0,
-        WAIT_FOR_SYNC,        
-	NORMAL_DISCHARGE,
-	TAU_DISCHARGE,        
-	FAST_DISCHARGE,
-	STOPPED_BY_INT
+	GEN_SIGNAL_INIT_DISCHARGE = 0,
+        GEN_SIGNAL_WAIT_FOR_SYNC,
+        GEN_SIGNAL_WAIT_T1,
+        GEN_SIGNAL_DRAWING,
+        GEN_SIGNAL_WAIT_T2,
+	GEN_SIGNAL_STOPPED_BY_INT
 
 } discharge_state_t;
 
@@ -94,20 +97,34 @@ typedef enum
 
 #define SIZEOF_OVERCURRENT_BUFF			8
 
-#define CURRENT_INTEGRAL_MAX_ERRORS        5
+#define CURRENT_INTEGRAL_MAX_ERRORS        SIGNAL_ADMITED_WITH_NO_CURRENT
+//TODO: cambiar esto si la senial generada tiene la misma cantidad de puntos para todas las freq
 #define CURRENT_INTEGRAL_THRESHOLD_10HZ         270
 #define CURRENT_INTEGRAL_THRESHOLD_30HZ         90
 #define CURRENT_INTEGRAL_THRESHOLD_60HZ         55
 
-#define SIGNALS_WITHOUT_SYNC    10
-
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
-#define SIGNAL_FAST_DISCHARGE do {\
+#define SIGNAL_PWM_FAST_DISCHARGE do {\
         HIGH_LEFT_PWM (0);\
         LOW_RIGHT_PWM (0);\
     } while (0)
 
+#ifdef VER_2_0
+#define SIGNAL_PWM_NORMAL_DISCHARGE do {\
+        HIGH_LEFT_PWM (0);\
+        LOW_RIGHT_PWM (DUTY_ALWAYS);\
+    } while (0)
+#endif
+
+#if (defined VER_1_0) || (defined VER_1_1)
+#define SIGNAL_PWM_NORMAL_DISCHARGE do {\
+        HIGH_LEFT_PWM(0);
+        LOW_LEFT_PWM(0);
+        HIGH_RIGHT_PWM(0);
+        LOW_RIGHT_PWM(DUTY_ALWAYS);
+    } while (0)
+#endif
 
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);

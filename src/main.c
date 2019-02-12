@@ -177,6 +177,24 @@ int main(void)
     // }
     //--- Fin Prueba LED y USART TX---//
 
+    //--- Prueba TIM16 ---//    
+    // TIM_16_Init ();    //lo uso para los tiempos muertos entre las funciones de generacion de seniales
+
+    // TIM16->CNT = 0;
+    // while (1)
+    // {
+    //     if ((TIM16->CNT) > 10)
+    //     {
+    //         if (LED)
+    //             LED_OFF;
+    //         else
+    //             LED_ON;
+
+    //         TIM16->CNT = 0;
+    //     }
+    // }
+    //--- Prueba TIM16 ---//    
+    
     //--- Prueba LED y USART RX ---//
     // while (1)
     // {
@@ -195,7 +213,8 @@ int main(void)
 
     TIM_1_Init ();    //lo utilizo para synchro ADC muestras 1500Hz
     TIM_3_Init ();    //lo utilizo para mosfets LOW_LEFT, HIGH_LEFT, LOW_RIGHT, HIGH_RIGHT
-                      //tambien lo activo para hacer mas cuentas en el pid
+
+    TIM_16_Init ();    //lo uso para los tiempos muertos entre las funciones de generacion de seniales
 
     //Update_TIM3_CH2 (10);
     // TIM3->CCR3 = 1000;

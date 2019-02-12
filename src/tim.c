@@ -186,16 +186,16 @@ void TIM3_IRQHandler (void)	//alrededor de 7KHz
         TIM3->SR = 0x00;
 }
 
-void TIM_6_Init (void)
+void TIM_6_Init (void)    //cada tick 100us
 {
-	if (!RCC_TIM6_CLK)
-		RCC_TIM6_CLK_ON;
+    if (!RCC_TIM6_CLK)
+        RCC_TIM6_CLK_ON;
 
-	//Configuracion del timer.
-	TIM6->CR1 = 0x00;		//clk int / 1; upcounting
-	TIM6->PSC = 47;			//tick cada 1us
-	TIM6->ARR = 0xFFFF;			//para que arranque
-	//TIM6->CR1 |= TIM_CR1_CEN;
+    //Configuracion del timer.
+    TIM6->CR1 = 0x00;		//clk int / 1; upcounting
+    TIM6->PSC = 4700;			
+    TIM6->ARR = 0xFFFF;			//para que arranque
+    TIM6->CR1 |= TIM_CR1_CEN;
 }
 
 void TIM14_IRQHandler (void)	//100uS
@@ -235,31 +235,24 @@ void TIM_14_Init (void)
 
 void TIM16_IRQHandler (void)	//es one shoot
 {
-	//SendDMXPacket(PCKT_UPDATE);
-
-	if (TIM16->SR & 0x01)
-		//bajar flag
-		TIM16->SR = 0x00;
+    if (TIM16->SR & 0x01)
+        TIM16->SR = 0x00;        //bajar flag
 }
 
 
-void TIM_16_Init (void)
+void TIM_16_Init (void)    //cada tick 100us
 {
-	if (!RCC_TIM16_CLK)
-		RCC_TIM16_CLK_ON;
+    if (!RCC_TIM16_CLK)
+        RCC_TIM16_CLK_ON;
 
-	//Configuracion del timer.
-	TIM16->CR1 = 0x00;		//clk int / 1; upcounting; uev
-	TIM16->ARR = 0xFFFF;
-	TIM16->CNT = 0;
-	//TIM16->PSC = 7999;	//tick 1ms
-	//TIM16->PSC = 799;	//tick 100us
-	TIM16->PSC = 47;			//tick 1us
-	TIM16->EGR = TIM_EGR_UG;
+    //Configuracion del timer.
+    TIM16->CR1 = 0x00;		//clk int / 1; upcounting; uev
+    TIM16->PSC = 4799;			//tick 100us
+    TIM16->EGR |= TIM_EGR_UG;    //update para cargar preescaler
+    TIM16->ARR = 0xFFFF;
+    TIM16->CNT = 0;
 
-	// Enable timer ver UDIS
-	//	TIM16->DIER |= TIM_DIER_UIE;
-	//	TIM16->CR1 |= TIM_CR1_CEN;
+    TIM16->CR1 |= TIM_CR1_CEN;
 }
 
 void OneShootTIM16 (unsigned short a)
