@@ -74,9 +74,11 @@ char * GetOwnChannel (void)
 
 void UpdateCommunications (void)
 {
-    if (SerialProcess() > 2)	//si tiene algun dato significativo
+    // si no estoy generando la senial reviso los mensajes
+    if (GetGenSignalState() != GEN_SIGNAL_DRAWING)
     {
-        InterpretarMsg();
+        if (SerialProcess() > 2)	//si tiene algun dato significativo
+            InterpretarMsg();
     }
 }
 

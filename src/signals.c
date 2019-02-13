@@ -44,7 +44,7 @@ extern unsigned short pid_param_d;
 /* Global variables ---------------------------------------------------------*/
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
-discharge_state_t discharge_state = GEN_SIGNAL_INIT_DISCHARGE;
+gen_signal_state_t gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
 unsigned char global_error = 0;
 
 unsigned short * p_signal;
@@ -88,6 +88,21 @@ unsigned short current_integral_threshold = 0;
 
 //Signals Templates
 #define I_MAX 465
+
+//seniales nuevas
+const unsigned short s_senoidal_3A [SIZEOF_NEW_SIGNALS] = {0,14,29,43,58,72,87,101,115,129,
+                                                         143,157,171,184,197,211,224,236,249,261,
+                                                         273,285,296,307,318,328,338,348,358,367,
+                                                         376,384,392,400,407,414,420,426,432,437,
+                                                         442,446,450,453,456,459,461,462,464,464,
+                                                         465,464,464,462,461,459,456,453,450,446,
+                                                         442,437,432,426,420,414,407,400,392,384,
+                                                         376,367,358,348,338,328,318,307,296,285,
+                                                         273,261,249,236,224,211,197,184,171,157,
+                                                         143,129,115,101,87,72,58,43,29,14};
+
+
+//seniales viejas
 const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] = {0,19,38,58,77,96,115,134,152,171,
                                                          189,206,224,240,257,273,288,303,318,332,
                                                          345,358,370,381,392,402,412,420,428,435,
@@ -455,6 +470,11 @@ treatment_t GetTreatmentState (void)
     return treatment_state;
 }
 
+gen_signal_state_t GetGenSignalState (void)
+{
+    return gen_signal_state;
+}
+
 resp_t StartTreatment (void)
 {
     if (treatment_state == TREATMENT_STANDBY)
@@ -536,7 +556,8 @@ resp_t SetSignalType (signal_type_t a)
 #endif
 
     if (a == SINUSOIDAL_SIGNAL)
-        p_signal = (unsigned short *) s_senoidal_1_5A;
+        p_signal = (unsigned short *) s_senoidal_3A;
+        // p_signal = (unsigned short *) s_senoidal_1_5A;    
     if (a == SINUSOIDAL_SIGNAL_90)
         p_signal = (unsigned short *) s_senoidal_90_1_5A;
     if (a == SINUSOIDAL_SIGNAL_180)
@@ -688,14 +709,14 @@ void SendAllConf (void)
 //reset a antes de la generacion de seniales
 void GenerateSignalReset (void)
 {
-    discharge_state = GEN_SIGNAL_INIT_DISCHARGE;
+    gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
 }
 
 //la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
 //sino espera a que sea quitado
 //cada muestra seq_ready llega a 1500Hz
 //TODO: mejorar esto dar al pid un par de cuentas para cada muestra, si la senial es de 0
-#define T1_DEF    250
+#define T1_DEF    0
 #define T2_DEF    20    //cuenta cada 100us, 2ms
 //descargar rapido y apagar
 #define TAU_SPACE    0
@@ -703,11 +724,11 @@ void GenerateSignalReset (void)
 void GenerateSignal (void)
 {
 
-    switch (discharge_state)
+    switch (gen_signal_state)
     {
     case GEN_SIGNAL_INIT_DISCHARGE:			//arranco siempre con descarga por TAU
         SIGNAL_PWM_NORMAL_DISCHARGE;
-        discharge_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
 
         //sync
         sync_on_signal = 0;
@@ -727,7 +748,7 @@ void GenerateSignal (void)
             SIGNAL_PWM_NORMAL_DISCHARGE;
 
             TIM16->CNT = 0;
-            discharge_state = GEN_SIGNAL_WAIT_T1;
+            gen_signal_state = GEN_SIGNAL_WAIT_T1;
         }
         break;
 
@@ -735,7 +756,7 @@ void GenerateSignal (void)
         if (TIM16->CNT > T1_DEF)
         {
             Signal_UpdatePointerReset();
-            discharge_state = GEN_SIGNAL_DRAWING;
+            gen_signal_state = GEN_SIGNAL_DRAWING;
         }
         break;
             
@@ -755,14 +776,14 @@ void GenerateSignal (void)
             {
                 SIGNAL_PWM_FAST_DISCHARGE;
                 TIM16->CNT = 0;
-                discharge_state = GEN_SIGNAL_WAIT_T2;
+                gen_signal_state = GEN_SIGNAL_WAIT_T2;
             }
         }
         break;
 
     case GEN_SIGNAL_WAIT_T2:
         if (TIM16->CNT > T2_DEF)
-            discharge_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+            gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
         
         break;
             
@@ -770,19 +791,19 @@ void GenerateSignal (void)
         break;
 
     default:
-        discharge_state = GEN_SIGNAL_INIT_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
         break;
     }
 
 
     //en este bloque reviso si llego un nuevo sincronismo
     //llego sync sin haber terminado la senial, la termino
-    if ((sync_on_signal) && (discharge_state != GEN_SIGNAL_WAIT_FOR_SYNC))
+    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC))
     {
         //seteo pwm fast discharge
         SIGNAL_PWM_FAST_DISCHARGE;
 
-        discharge_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
         Signal_UpdatePointerReset();
                 
 #ifdef USE_SOFT_NO_CURRENT
@@ -924,7 +945,8 @@ resp_t Signal_UpdatePointer (void)
     //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
 
     //-- Signal Update --//
-    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))
+    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_NEW_SIGNALS))
+    // if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))        
     {
         p_signal_running += signal_to_gen.freq_table_inc;
 #ifdef USE_SOFT_NO_CURRENT
@@ -972,7 +994,7 @@ void Overcurrent_Shutdown (void)
 	DISABLE_TIM3;
 
 	//freno la generacionde la senial
-	discharge_state = GEN_SIGNAL_STOPPED_BY_INT;
+	gen_signal_state = GEN_SIGNAL_STOPPED_BY_INT;
 
 	//ahora aviso del error
 	SetErrorStatus(ERROR_OVERCURRENT);

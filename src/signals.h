@@ -81,13 +81,14 @@ typedef enum
         GEN_SIGNAL_WAIT_T2,
 	GEN_SIGNAL_STOPPED_BY_INT
 
-} discharge_state_t;
+} gen_signal_state_t;
 
 
 //--- Exported constants ---//
 
 //--- Exported macro ---//
 #define SIZEOF_SIGNALS		150
+#define SIZEOF_NEW_SIGNALS		100
 
 #define ERROR_OVERCURRENT_MASK			0x01
 #define ERROR_NO_CURRENT_MASK				0x02
@@ -134,7 +135,6 @@ resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);
 void GenerateSignal (void);
 resp_t AssertTreatmentParams (void);
-treatment_t GetTreatmentState (void);
 resp_t StartTreatment (void);
 void StopTreatment (void);
 error_t GetErrorStatus (void);
@@ -143,6 +143,9 @@ void SendAllConf (void);
 void TreatmentManager (void);
 void Overcurrent_Shutdown (void);
 void TreatmentManager_IntSpeed (void);
+
+treatment_t GetTreatmentState (void);
+gen_signal_state_t GetGenSignalState (void);
 
 #endif    /* _SIGNALS_H_ */
 
