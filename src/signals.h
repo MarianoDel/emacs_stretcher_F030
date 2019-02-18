@@ -33,16 +33,26 @@ typedef enum {
 	THIRTY_HZ,
 	SIXTY_HZ
 
-} frequency_t;
+} signal_frequency_t;
+
+typedef enum {
+	ZERO_DEG_OFFSET = 0,
+	NINTY_DEG_OFFSET,
+	HUNDRED_EIGHTY_DEG_OFFSET
+
+} signal_offset_t;
 
 typedef struct {
     signal_type_t signal;
-    frequency_t frequency;
-    unsigned char freq_table_inc;
+    signal_frequency_t frequency;
+    signal_offset_t offset;
     unsigned char power;
     unsigned char synchro_needed;    //por ahora salen siempre sincronizadas
 
     //internals
+    unsigned short t1;
+    unsigned short t2;
+
     unsigned short kprop;
     unsigned short kinteg;
     unsigned short kderv;
@@ -85,10 +95,10 @@ typedef enum
 
 
 //--- Exported constants ---//
+#define TAU_LR_MILLIS    9
 
 //--- Exported macro ---//
-#define SIZEOF_SIGNALS		150
-#define SIZEOF_NEW_SIGNALS		100
+#define SIZEOF_SIGNALS		100
 
 #define ERROR_OVERCURRENT_MASK			0x01
 #define ERROR_NO_CURRENT_MASK				0x02
@@ -103,6 +113,10 @@ typedef enum
 #define CURRENT_INTEGRAL_THRESHOLD_10HZ         270
 #define CURRENT_INTEGRAL_THRESHOLD_30HZ         90
 #define CURRENT_INTEGRAL_THRESHOLD_60HZ         55
+
+#define SAMPLE_TIME_10HZ    500
+#define SAMPLE_TIME_30HZ    166
+#define SAMPLE_TIME_60HZ    83
 
 #define FlushErrorStatus() SetErrorStatus(ERROR_FLUSH_MASK)
 
@@ -130,7 +144,7 @@ typedef enum
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);
 resp_t SetSignalType (signal_type_t);
-resp_t SetFrequency (frequency_t);
+resp_t SetFrequency (signal_frequency_t);
 resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);
 void GenerateSignal (void);

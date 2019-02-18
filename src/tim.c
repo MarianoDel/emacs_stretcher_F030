@@ -63,6 +63,11 @@ void Wait_ms (unsigned short wait)
 	while (wait_ms_var);
 }
 
+void TIM1_ChangeTick (unsigned short new_tick)
+{
+    TIM1->ARR = new_tick;
+}
+
 //-------------------------------------------//
 // @brief  TIM configure.
 // @param  None

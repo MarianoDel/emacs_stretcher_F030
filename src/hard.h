@@ -37,7 +37,7 @@
 // #define USE_SOFT_OVERCURRENT
 
 //Si utiliza la proteccion de no current
-// #define USE_SOFT_NO_CURRENT
+#define USE_SOFT_NO_CURRENT
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS

@@ -71,6 +71,8 @@ void Update_TIM3_CH2 (unsigned short);
 void Update_TIM3_CH3 (unsigned short);
 void Update_TIM3_CH4 (unsigned short);
 
+void TIM1_ChangeTick (unsigned short);
+    
 void OneShootTIM16 (unsigned short);
 void TIM16Enable (void);
 void TIM16Disable (void);

@@ -73,200 +73,71 @@ unsigned char current_integral_errors = 0;
 unsigned short current_integral_threshold = 0;
 #endif
 
-//parametros del PID segun las seniales (solo en RAM)
-#define PID_SQUARE_P    640
-#define PID_SQUARE_I    200
+//parametros del PID segun las seniales (es el valor elegido dividido 128)
+//PID nuevos
+#define PID_SQUARE_P    224
+#define PID_SQUARE_I    256
 #define PID_SQUARE_D    0
 
-#define PID_TRIANGULAR_P    640
-#define PID_TRIANGULAR_I    128
+#define PID_TRIANGULAR_P    224
+#define PID_TRIANGULAR_I    256
 #define PID_TRIANGULAR_D    0
 
-#define PID_SINUSOIDAL_P    640
-#define PID_SINUSOIDAL_I    16
+// #define PID_SINUSOIDAL_P    224
+#define PID_SINUSOIDAL_P    525
+#define PID_SINUSOIDAL_I    256
 #define PID_SINUSOIDAL_D    0
+
+//PID original
+// #define PID_SQUARE_P    640
+// #define PID_SQUARE_I    200
+// #define PID_SQUARE_D    0
+
+// #define PID_TRIANGULAR_P    640
+// #define PID_TRIANGULAR_I    128
+// #define PID_TRIANGULAR_D    0
+
+// #define PID_SINUSOIDAL_P    640
+// #define PID_SINUSOIDAL_I    16
+// #define PID_SINUSOIDAL_D    0
 
 //Signals Templates
 #define I_MAX 465
 
 //seniales nuevas
-const unsigned short s_senoidal_3A [SIZEOF_NEW_SIGNALS] = {0,14,29,43,58,72,87,101,115,129,
-                                                         143,157,171,184,197,211,224,236,249,261,
-                                                         273,285,296,307,318,328,338,348,358,367,
-                                                         376,384,392,400,407,414,420,426,432,437,
-                                                         442,446,450,453,456,459,461,462,464,464,
-                                                         465,464,464,462,461,459,456,453,450,446,
-                                                         442,437,432,426,420,414,407,400,392,384,
-                                                         376,367,358,348,338,328,318,307,296,285,
-                                                         273,261,249,236,224,211,197,184,171,157,
-                                                         143,129,115,101,87,72,58,43,29,14};
+const unsigned short s_sinusoidal_3A [SIZEOF_SIGNALS] = {14,29,43,58,72,87,101,115,129,143,
+                                                         157,171,184,197,211,224,236,249,261,273,
+                                                         285,296,307,318,328,338,348,358,367,376,
+                                                         384,392,400,407,414,420,426,432,437,442,
+                                                         446,450,453,456,459,461,462,464,464,465,
+                                                         464,464,462,461,459,456,453,450,446,442,
+                                                         437,432,426,420,414,407,400,392,384,376,
+                                                         367,358,348,338,328,318,307,296,285,273,
+                                                         261,249,236,224,211,197,184,171,157,143,
+                                                         129,115,101,87,72,58,43,29,14,0};
+
+const unsigned short s_triangular_3A [SIZEOF_SIGNALS] = {4,9,13,18,23,27,32,37,41,46,
+                                                         51,55,60,65,69,74,79,83,88,93,
+                                                         97,102,106,111,116,120,125,130,134,139,
+                                                         144,148,153,158,162,167,172,176,181,186,
+                                                         190,195,199,204,209,213,218,223,227,232,
+                                                         237,241,246,251,255,260,265,269,274,279,
+                                                         283,288,292,297,302,306,311,316,320,325,
+                                                         330,334,339,344,348,353,358,362,367,372,
+                                                         376,381,385,390,395,399,404,409,413,418,
+                                                         423,427,432,437,441,446,451,455,460,465};
 
 
-//seniales viejas
-const unsigned short s_senoidal_1_5A [SIZEOF_SIGNALS] = {0,19,38,58,77,96,115,134,152,171,
-                                                         189,206,224,240,257,273,288,303,318,332,
-                                                         345,358,370,381,392,402,412,420,428,435,
-                                                         442,447,452,456,460,462,464,464,464,464,
-                                                         462,460,456,452,447,442,435,428,420,412,
-                                                         402,392,381,370,358,345,332,318,303,288,
-                                                         273,257,240,224,206,189,171,152,134,115,
-                                                         96,77,58,38,19,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_senoidal_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,9,29,
-                                                            48,67,87,106,125,143,162,180,197,215,
-                                                            232,249,265,281,296,311,325,338,352,364,
-                                                            376,387,397,407,416,424,432,439,445,450,
-                                                            454,458,461,463,464,465,464,463,461,458,
-                                                            454,450,445,439,432,424,416,407,397,387,
-                                                            376,364,352,338,325,311,296,281,265,249,
-                                                            232,215,197,180,162,143,125,106,87,67,
-                                                            48,29,9,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0};
-
-//TODO: que todas las seniales terminen con 0 por el sincro, o mejorar en el dibujo
-const unsigned short s_senoidal_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,19,38,58,77,
-                                                             96,115,134,152,171,189,206,224,240,257,
-                                                             273,288,303,318,332,345,358,370,381,392,
-                                                             402,412,420,428,435,442,447,452,456,460,
-                                                             462,464,464,464,464,462,460,456,452,447,
-                                                             442,435,428,420,412,402,392,381,370,358,
-                                                             345,332,318,303,288,273,257,240,224,206,
-                                                             189,171,152,134,115,96,77,58,38,19,
-                                                             0,0,0,0};
-
-const unsigned short s_cuadrada_1_5A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,465,465,465,465,
-                                                         465,465,465,465,465,465,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_cuadrada_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,465,465,465,465,465,465,465,
-                                                            465,465,465,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0,
-                                                            0,0,0,0,0,0,0,0,0,0};
-
-//TODO: que todas las seniales terminen con 0 por el sincro, o mejorar en el dibujo
-const unsigned short s_cuadrada_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             0,0,0,0,0,0,0,0,0,0,
-                                                             465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             465,465,465,465,465,465,465,465,465,465,
-                                                             0,0,0,0};
-
-const unsigned short s_triangular_1_5A [SIZEOF_SIGNALS] = {0,6,12,18,24,31,37,43,49,55,
-                                                           62,68,74,80,86,93,99,105,111,117,
-                                                           124,130,136,142,148,155,161,167,173,179,
-                                                           186,192,198,204,210,217,223,229,235,241,
-                                                           248,254,260,266,272,279,285,291,297,303,
-                                                           310,316,322,328,334,341,347,353,359,365,
-                                                           372,378,384,390,396,403,409,415,421,427,
-                                                           434,440,446,452,458,465,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0,
-                                                           0,0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_triangular_90_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                              0,0,0,0,0,0,0,0,0,0,
-                                                              0,0,0,0,0,0,0,0,0,0,
-                                                              0,0,0,0,0,
-                                                              0,6,12,18,24,31,37,43,49,55,
-                                                              62,68,74,80,86,93,99,105,111,117,
-                                                              124,130,136,142,148,155,161,167,173,179,
-                                                              186,192,198,204,210,217,223,229,235,241,
-                                                              248,254,260,266,272,279,285,291,297,303,
-                                                              310,316,322,328,334,341,347,353,359,365,
-                                                              372,378,384,390,396,403,409,415,421,427,
-                                                              434,440,446,452,458,465,0,0,0,0,
-                                                              0,0,0,0,0,
-                                                              0,0,0,0,0,0,0,0,0,0,
-                                                              0,0,0,0,0,0,0,0,0,0,
-                                                              0,0,0,0,0,0,0,0,0,0};
-
-const unsigned short s_triangular_180_1_5A [SIZEOF_SIGNALS] = {0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,0,0,0,0,0,0,0,0,0,
-                                                               0,6,12,18,24,31,37,43,49,55,
-                                                               62,68,74,80,86,93,99,105,111,117,
-                                                               124,130,136,142,148,155,161,167,173,179,
-                                                               186,192,198,204,210,217,223,229,235,241,
-                                                               248,254,260,266,272,279,285,291,297,303,
-                                                               310,316,322,328,334,341,347,353,359,365,
-                                                               372,378,384,390,396,403,409,415,421,427,
-                                                               434,440,446,452,458,465,0,0,0,0};
-
-const unsigned short s_triangular_6A [SIZEOF_SIGNALS] = {0,11,23,35,47,59,71,83,95,107,
-                                                         131,143,155,167,179,191,203,215,227,
-                                                         251,263,275,287,299,311,323,335,347,
-                                                         371,383,395,407,419,431,443,455,467,
-                                                         491,503,515,527,539,551,563,575,587,
-                                                         611,623,635,647,659,671,683,695,707,
-                                                         731,743,755,767,779,791,803,815,827,
-                                                         851,863,875,887,899,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0,
-                                                         0,0,0,0,0,0,0,0,0};
+const unsigned short s_square_3A [SIZEOF_SIGNALS] = {465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465,
+                                                     465,465,465,465,465,465,465,465,465,465};
 
 
 // Private Module Functions ------------------------------
@@ -274,6 +145,7 @@ void Signal_UpdatePointerReset (void);
 resp_t Signal_UpdatePointer (void);
 void Signal_DrawingReset (void);
 resp_t Signal_Drawing (void);
+void Signal_OffsetCalculate (void);
 
 // Module Functions --------------------------------------
 void TreatmentManager (void)
@@ -296,6 +168,7 @@ void TreatmentManager (void)
     case TREATMENT_START_TO_GENERATE:		//reviso una vez mas los parametros y no tener ningun error
         if ((AssertTreatmentParams() == resp_ok) && (GetErrorStatus() == ERROR_OK))
         {
+            Signal_OffsetCalculate();
             GenerateSignalReset();
 
 #ifdef USE_SOFT_OVERCURRENT
@@ -366,9 +239,9 @@ void TreatmentManager (void)
         break;
 
     case TREATMENT_STOPPING:
-        //10ms descarga rapida y a idle
+        //espero 3 Tau en descarga normal y voy a idle
         SIGNAL_PWM_NORMAL_DISCHARGE;
-        timer_signals = 10;
+        timer_signals = 3 * TAU_LR_MILLIS;
         treatment_state = TREATMENT_STOPPING2;
         break;
 
@@ -377,6 +250,7 @@ void TreatmentManager (void)
         {
             treatment_state = TREATMENT_INIT_FIRST_TIME;
             EXTIOff();
+            //por si vengo de la INT
             ENABLE_TIM3;
             LED_OFF;
         }
@@ -527,41 +401,75 @@ void SetErrorStatus (error_t e)
     }
 }
 
-//TODO: PONER UNA TRABA DE SETEOS PARA NO CAMBIAR NADA CORRIENDO
 //recibe tipo de senial
+//setea senial y offset
 resp_t SetSignalType (signal_type_t a)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
 
     if (a == SQUARE_SIGNAL)
-        p_signal = (unsigned short *) s_cuadrada_1_5A;
+    {
+        p_signal = (unsigned short *) s_square_3A;
+        signal_to_gen.offset = ZERO_DEG_OFFSET;
+    }
+        
     if (a == SQUARE_SIGNAL_90)
-        p_signal = (unsigned short *) s_cuadrada_90_1_5A;
+    {
+        p_signal = (unsigned short *) s_square_3A;
+        signal_to_gen.offset = NINTY_DEG_OFFSET;
+    }
+        
     if (a == SQUARE_SIGNAL_180)
-        p_signal = (unsigned short *) s_cuadrada_180_1_5A;
+    {
+        p_signal = (unsigned short *) s_square_3A;
+        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
+    }
 
     
 #if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
     if (a == TRIANGULAR_SIGNAL)
+    {
         p_signal = (unsigned short *) s_triangular_6A;
+        signal_to_gen.offset = ZERO_DEG_OFFSET;
+    }
 #else
     if (a == TRIANGULAR_SIGNAL)
-        p_signal = (unsigned short *) s_triangular_1_5A;
+    {
+        p_signal = (unsigned short *) s_triangular_3A;
+        signal_to_gen.offset = ZERO_DEG_OFFSET;
+    }
+        
     if (a == TRIANGULAR_SIGNAL_90)
-        p_signal = (unsigned short *) s_triangular_90_1_5A;    
+    {
+        p_signal = (unsigned short *) s_triangular_3A;
+        signal_to_gen.offset = NINTY_DEG_OFFSET;
+    }
+
     if (a == TRIANGULAR_SIGNAL_180)
-        p_signal = (unsigned short *) s_triangular_180_1_5A;    
-    
+    {
+        p_signal = (unsigned short *) s_triangular_3A;
+        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
+    }
 #endif
 
     if (a == SINUSOIDAL_SIGNAL)
-        p_signal = (unsigned short *) s_senoidal_3A;
-        // p_signal = (unsigned short *) s_senoidal_1_5A;    
+    {
+        p_signal = (unsigned short *) s_sinusoidal_3A;
+        signal_to_gen.offset = ZERO_DEG_OFFSET;
+    }
+        
     if (a == SINUSOIDAL_SIGNAL_90)
-        p_signal = (unsigned short *) s_senoidal_90_1_5A;
+    {
+        p_signal = (unsigned short *) s_sinusoidal_3A;
+        signal_to_gen.offset = NINTY_DEG_OFFSET;
+    }
+
     if (a == SINUSOIDAL_SIGNAL_180)
-        p_signal = (unsigned short *) s_senoidal_180_1_5A;
+    {
+        p_signal = (unsigned short *) s_sinusoidal_3A;
+        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
+    }
 
     signal_to_gen.signal = a;
 
@@ -619,29 +527,11 @@ resp_t SetSignalType (signal_type_t a)
 
 //setea la frecuencia y el timer con el que se muestrea
 //por default o error es simepre de 1500Hz -> seniales de 10Hz
-resp_t SetFrequency (frequency_t a)
+resp_t SetFrequency (signal_frequency_t a)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
 
-    // if (a == TEN_HZ)
-    //     signal_to_gen.freq_table_inc = 1;
-
-    // if (a == THIRTY_HZ)
-    //     signal_to_gen.freq_table_inc = 3;
-
-    // if (a == SIXTY_HZ)
-    //     signal_to_gen.freq_table_inc = 6;
-
-    if (a == TEN_HZ)
-        signal_to_gen.freq_table_inc = 1;
-
-    if (a == THIRTY_HZ)
-        signal_to_gen.freq_table_inc = 3;
-
-    if (a == SIXTY_HZ)
-        signal_to_gen.freq_table_inc = 6;
-    
     signal_to_gen.frequency = a;
 
     return resp_ok;
@@ -670,25 +560,17 @@ resp_t AssertTreatmentParams (void)
     if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
         return resp;
 
-    if ((signal_to_gen.freq_table_inc != 1) &&
-        (signal_to_gen.freq_table_inc != 3) &&
-        (signal_to_gen.freq_table_inc != 6))
-        return resp;
-
     if ((signal_to_gen.frequency != TEN_HZ) &&
         (signal_to_gen.frequency != THIRTY_HZ) &&
         (signal_to_gen.frequency != SIXTY_HZ))
         return resp;
 
-    // if ((signal_to_gen.signal != SQUARE_SIGNAL) &&
-    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL) &&
-    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_120) &&
-    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_180) &&
-    //     (signal_to_gen.signal != TRIANGULAR_SIGNAL_240) &&
-    //     (signal_to_gen.signal != SINUSOIDAL_SIGNAL))
     if (signal_to_gen.signal > SINUSOIDAL_SIGNAL_180)
         return resp;
 
+    if (signal_to_gen.offset > HUNDRED_EIGHTY_DEG_OFFSET)
+        return resp;
+    
     //TODO: revisar tambien puntero!!!!
     return resp_ok;
 }
@@ -700,7 +582,7 @@ void SendAllConf (void)
     Usart1Send(b);
     sprintf(b, "signal: %d\n", signal_to_gen.signal);
     Usart1Send(b);
-    sprintf(b, "freq: %d, inc: %d\n", signal_to_gen.frequency, signal_to_gen.freq_table_inc);
+    sprintf(b, "freq: %d, offset: %d\n", signal_to_gen.frequency, signal_to_gen.offset * 90);
     Usart1Send(b);
     sprintf(b, "power: %d\n\n", signal_to_gen.power);
     Usart1Send(b);
@@ -714,13 +596,7 @@ void GenerateSignalReset (void)
 
 //la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
 //sino espera a que sea quitado
-//cada muestra seq_ready llega a 1500Hz
-//TODO: mejorar esto dar al pid un par de cuentas para cada muestra, si la senial es de 0
-#define T1_DEF    0
-#define T2_DEF    20    //cuenta cada 100us, 2ms
-//descargar rapido y apagar
 #define TAU_SPACE    0
-#define HOW_MANY_ZEROS_TO_ZERO    3
 void GenerateSignal (void)
 {
 
@@ -753,7 +629,7 @@ void GenerateSignal (void)
         break;
 
     case GEN_SIGNAL_WAIT_T1:
-        if (TIM16->CNT > T1_DEF)
+        if (TIM16->CNT > signal_to_gen.t1)
         {
             Signal_UpdatePointerReset();
             gen_signal_state = GEN_SIGNAL_DRAWING;
@@ -782,7 +658,7 @@ void GenerateSignal (void)
         break;
 
     case GEN_SIGNAL_WAIT_T2:
-        if (TIM16->CNT > T2_DEF)
+        if (TIM16->CNT > signal_to_gen.t2)
             gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
         
         break;
@@ -829,6 +705,7 @@ void Signal_DrawingReset (void)
 }
 
 //llamar para cada punto a dibujar
+//calculo PID con puntero anterior y actualizo el puntero
 resp_t Signal_Drawing (void)
 {
     resp_t resp = resp_continue;
@@ -836,93 +713,87 @@ resp_t Signal_Drawing (void)
     switch (drawing_state)
     {
     case NORMAL_DISCHARGE:
-        if (Signal_UpdatePointer() == resp_continue)
-        {
-            d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                          I_Sense,
-                          d,
-                          &ez1,
-                          &ez2);
+        d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                      I_Sense,
+                      d,
+                      &ez1,
+                      &ez2);
                     
-            //reviso si necesito cambiar a descarga por tau
-            if (d < 0)
-            {
-                HIGH_LEFT_PWM(0);
-                drawing_state = TAU_DISCHARGE;
-                d = 0;	//limpio para pid descarga
-            }
-            else
-            {
-                if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-                    d = DUTY_95_PERCENT;
-
-                HIGH_LEFT_PWM(d);
-            }
+        //reviso si necesito cambiar a descarga por tau
+        if (d < 0)
+        {
+            HIGH_LEFT_PWM(0);
+            drawing_state = TAU_DISCHARGE;
+            d = 0;	//limpio para pid descarga
         }
-        else    //termine la senial
+        else
+        {
+            if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+                d = DUTY_95_PERCENT;
+            
+            HIGH_LEFT_PWM(d);
+        }
+
+        if (Signal_UpdatePointer() != resp_continue)
             resp = resp_ended;
 
         break;
 
     case TAU_DISCHARGE:		//la medicion de corriente sigue siendo I_Sense
-        if (Signal_UpdatePointer() == resp_continue)
+        d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                      I_Sense,
+                      d,
+                      &ez1,
+                      &ez2);
+
+        //reviso si necesito cambiar a descarga rapida
+        if (d < 0)
         {
-            d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                          I_Sense,
-                          d,
-                          &ez1,
-                          &ez2);
-
-            //reviso si necesito cambiar a descarga rapida
-            if (d < 0)
-            {
-                if (-d < DUTY_100_PERCENT)
-                    LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-                else
-                    LOW_RIGHT_PWM(0);    //descarga maxima
-
-                drawing_state = FAST_DISCHARGE;
-            }
+            if (-d < DUTY_100_PERCENT)
+                LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
             else
-            {
-                //esto es normal
-                if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
-                    d = DUTY_95_PERCENT;
+                LOW_RIGHT_PWM(0);    //descarga maxima
 
-                HIGH_LEFT_PWM(d);
-                drawing_state = NORMAL_DISCHARGE;
-            }
+            drawing_state = FAST_DISCHARGE;
         }
-        else    //termine la senial
+        else
+        {
+            //esto es normal
+            if (d > DUTY_95_PERCENT)		//no pasar del 95% para dar tiempo a los mosfets
+                d = DUTY_95_PERCENT;
+
+            HIGH_LEFT_PWM(d);
+            drawing_state = NORMAL_DISCHARGE;
+        }
+
+        if (Signal_UpdatePointer() != resp_continue)
             resp = resp_ended;
 
         break;
 
     case FAST_DISCHARGE:		//la medicion de corriente ahora esta en I_Sense_negado
-        if (Signal_UpdatePointer() == resp_continue)
-        {
-            d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
-                          I_Sense_negado,
-                          d,
-                          &ez1,
-                          &ez2);
+        d = PID_roof ((*p_signal_running * signal_to_gen.power / 100),
+                      I_Sense_negado,
+                      d,
+                      &ez1,
+                      &ez2);
 
-            //reviso si necesito cambiar a descarga por tau o normal
-            if (d < TAU_SPACE)
-            {
-                if (-d < DUTY_100_PERCENT)
-                    LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
-                else
-                    LOW_RIGHT_PWM(0);    //descarga maxima
-            }
+        //reviso si necesito cambiar a descarga por tau o normal
+        if (d < TAU_SPACE)
+        {
+            if (-d < DUTY_100_PERCENT)
+                LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
             else
-            {
-                //vuelvo a TAU_DISCHARGE
-                LOW_RIGHT_PWM(DUTY_ALWAYS);
-                drawing_state = TAU_DISCHARGE;
-            }
+                LOW_RIGHT_PWM(0);    //descarga maxima
         }
-        else    //termine la senial
+        else
+        {
+            //vuelvo a TAU_DISCHARGE
+            LOW_RIGHT_PWM(DUTY_ALWAYS);
+            drawing_state = TAU_DISCHARGE;
+        }
+
+        if (Signal_UpdatePointer() != resp_continue)
             resp = resp_ended;
 
         break;
@@ -942,13 +813,12 @@ resp_t Signal_UpdatePointer (void)
 {
     resp_t resp = resp_continue;
     //si la senial esta corriendo hago update de senial y un par de chequeos
-    //senial del adc cuando convierte la secuencia disparada por TIM1 a 1500Hz
+    //senial del adc cuando convierte la secuencia disparada por TIM1 a 2000Hz 6000Hz o 12000Hz
 
     //-- Signal Update --//
-    if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_NEW_SIGNALS))
-    // if ((p_signal_running + signal_to_gen.freq_table_inc) < (p_signal + SIZEOF_SIGNALS))        
+    if ((p_signal_running) < (p_signal + SIZEOF_SIGNALS))
     {
-        p_signal_running += signal_to_gen.freq_table_inc;
+        p_signal_running += 1;
 #ifdef USE_SOFT_NO_CURRENT
         current_integral_running += I_Sense;
 #endif
@@ -976,6 +846,80 @@ resp_t Signal_UpdatePointer (void)
         soft_overcurrent_index = 0;
 #endif
     return resp;
+}
+
+//calculo el offset de la senial, T1 T2 y el sampling
+//el sampling lo seteo en el timer TIM1
+void Signal_OffsetCalculate (void)
+{
+    switch (signal_to_gen.frequency)
+    {
+    case TEN_HZ:
+        TIM1_ChangeTick(SAMPLE_TIME_10HZ);
+
+        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 0;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 250;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 500;
+            signal_to_gen.t2 = 0;
+        }        
+        break;
+
+    case THIRTY_HZ:
+        TIM1_ChangeTick(SAMPLE_TIME_30HZ);
+        
+        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 0;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 83;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 166;
+            signal_to_gen.t2 = 0;
+        }                
+        break;
+
+    case SIXTY_HZ:
+        TIM1_ChangeTick(SAMPLE_TIME_60HZ);
+        
+        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 0;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 42;
+            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
+        }
+
+        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
+        {
+            signal_to_gen.t1 = 83;
+            signal_to_gen.t2 = 0;
+        }                
+        break;
+    }        
 }
 
 //hubo sobrecorriente, me llaman desde la interrupcion
