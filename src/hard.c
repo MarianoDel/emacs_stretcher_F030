@@ -36,6 +36,7 @@ void ChangeLed (unsigned char how_many)
 //mueve el LED segun el estado del Pote
 void UpdateLed (void)
 {
+#ifndef USE_LED_FOR_DEBUG
     switch (led_state)
     {
         case START_BLINKING:
@@ -87,4 +88,5 @@ void UpdateLed (void)
             led_state = START_BLINKING;
             break;
     }
+#endif
 }

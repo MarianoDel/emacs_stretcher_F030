@@ -22,6 +22,14 @@
 // #define VER_1_1		//mismo pinout que VER_1_0
 #define VER_2_0		//micro en placa grande
 
+#define SOFT_VER_1_1    //usa DMA en ADC, la senial es solo la parte util, el resto son timers
+                        //para la frecuencia y pid mueve timers y velocidad de muestreo
+
+// #define SOFT_VER_1_0    //este es el soft de las primeras placas, la senial la hacia con
+                        //puntero y la frecuencia saltando con ese mismo puntero
+                        //sin DMA para el ADC y seniales con 0V en tabla
+
+
 //-------- Type of Program ----------------
 #define POWER_WITH_MANAGEMENT
 // #define ONLY_POWER_WITHOUT_MANAGEMENT
@@ -43,6 +51,9 @@
 #define USART_IN_BUS
 // #define USART_SINGLE
 
+//el LED lo uso para debug de varios procesos, ver mas abajo cuales
+#define USE_LED_FOR_DEBUG
+
 //-------- Kind of Reports Sended ----------------
 
 //-------- Others Configurations depending on the formers ------------
@@ -53,6 +64,12 @@
 //cantidad de seniales que permito sin corriente antes de poner error
 #ifdef USE_SOFT_NO_CURRENT
 #define SIGNAL_ADMITED_WITH_NO_CURRENT    5    
+#endif
+
+#ifdef USE_LED_FOR_DEBUG
+// #define LED_SHOW_SEQUENCE
+#define LED_SHOW_MSGS
+// #define LED_SHOW_INT
 #endif
 
 //-------- Hysteresis Conf ------------------------

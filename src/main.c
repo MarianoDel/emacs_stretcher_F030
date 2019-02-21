@@ -339,13 +339,6 @@ int main(void)
 
         UpdateLed();
 
-        // if (PROTECT)
-        // 	LED_ON;
-        // else
-        // 	LED_OFF;
-
-        // GenerateSignal();
-
     }
 #endif
 

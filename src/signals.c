@@ -252,7 +252,9 @@ void TreatmentManager (void)
             EXTIOff();
             //por si vengo de la INT
             ENABLE_TIM3;
+#ifdef LED_SHOW_INT
             LED_OFF;
+#endif
         }
         break;
 
@@ -327,7 +329,9 @@ void TreatmentManager_IntSpeed (void)
                 treatment_state = TREATMENT_INIT_FIRST_TIME;
                 EXTIOff();
                 ENABLE_TIM3;
+#ifdef LED_SHOW_INT
                 LED_OFF;
+#endif
                 SetErrorStatus(ERROR_FLUSH_MASK);
                 timer_signals = 30;    //30ms mas de demora despues de int
             }
@@ -497,7 +501,7 @@ resp_t SetSignalType (signal_type_t a)
     return resp_ok;
 }
 
-//recibe referecnia a la estructura de senial
+//recibe referencia a la estructura de senial
 //recibe tipo de senial
 // resp_t SetSignalType (signals_struct_t * s, signal_type_t a)
 // {
@@ -643,10 +647,12 @@ void GenerateSignal (void)
         if (sequence_ready)
         {
             sequence_ready_reset;    //aprox 7KHz synchro con pwm
+#ifdef LED_SHOW_SEQUENCE
             if (LED)
                 LED_OFF;
             else
                 LED_ON;
+#endif
             
             if (Signal_Drawing() == resp_ended)
             {
@@ -925,28 +931,25 @@ void Signal_OffsetCalculate (void)
 //hubo sobrecorriente, me llaman desde la interrupcion
 void Overcurrent_Shutdown (void)
 {
-#ifdef INT_WITH_LED
-    if (LED)
-        LED_OFF;
-    else
-        LED_ON;
+#ifdef LED_SHOW_INT
+    LED_ON;
 #endif
-	//primero freno todos los PWM
-	HIGH_LEFT_PWM(0);
-	LOW_RIGHT_PWM(0);
 
-	DISABLE_TIM3;
+    //primero freno todos los PWM
+    HIGH_LEFT_PWM(0);
+    LOW_RIGHT_PWM(0);
 
-	//freno la generacionde la senial
-	gen_signal_state = GEN_SIGNAL_STOPPED_BY_INT;
+    DISABLE_TIM3;
 
-	//ahora aviso del error
-	SetErrorStatus(ERROR_OVERCURRENT);
+    //freno la generacionde la senial
+    gen_signal_state = GEN_SIGNAL_STOPPED_BY_INT;
 
-	//meto la generacion en Overcurrent
-	timer_signals = 10;
-	treatment_state = TREATMENT_STOPPING2;
-	// EXTIOff();
+    //ahora aviso del error
+    SetErrorStatus(ERROR_OVERCURRENT);
+
+    //meto la generacion en Overcurrent
+    timer_signals = 10;
+    treatment_state = TREATMENT_STOPPING2;
 }
 
 //--- end of file ---//

@@ -11,6 +11,8 @@
 #include "comm.h"
 #include "signals.h"
 #include "uart.h"
+#include "hard.h"    //para conocer que hacer con el LED
+#include "stm32f0xx.h"
 
 #include "utils.h"
 
@@ -75,11 +77,11 @@ char * GetOwnChannel (void)
 void UpdateCommunications (void)
 {
     // si no estoy generando la senial reviso los mensajes
-    if (GetGenSignalState() != GEN_SIGNAL_DRAWING)
-    {
+    // if (GetGenSignalState() != GEN_SIGNAL_DRAWING)
+    // {
         if (SerialProcess() > 2)	//si tiene algun dato significativo
             InterpretarMsg();
-    }
+    // }
 }
 
 //Procesa consultas desde el micro principal
@@ -105,6 +107,9 @@ resp_t InterpretarMsg (void)
     unsigned char decimales = 0;
     char b [30];
 
+#ifdef LED_SHOW_MSGS
+    LED_ON;
+#endif
     //reviso canal propio o canal broadcast
     if ((strncmp(pStr, p_own_channel, sizeof(s_chf) - 1) == 0) ||
         (strncmp(pStr, s_chf, sizeof(s_chf) - 1) == 0))
@@ -282,6 +287,10 @@ resp_t InterpretarMsg (void)
             Usart1Send("NOK\n");
     }
 
+#ifdef LED_SHOW_MSGS
+    LED_OFF;
+#endif
+    
     return resp;
 }
 
