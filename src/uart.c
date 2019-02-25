@@ -85,7 +85,15 @@ void USART1_IRQHandler(void)
 
         //para sincronismo
         if (dummy == '.')
+        {
             sync_on_signal = 1;
+#ifdef LED_SHOW_SYNC_UART
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+        }
         else
         {
             if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])

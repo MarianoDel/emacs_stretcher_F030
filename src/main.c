@@ -430,4 +430,4 @@ void EXTI2_3_IRQHandler(void)
 }
 
 
-//------ EOF -------//
+//--- end of file ---//

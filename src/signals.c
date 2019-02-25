@@ -623,6 +623,13 @@ void GenerateSignal (void)
     case GEN_SIGNAL_WAIT_FOR_SYNC:
         if (sync_on_signal)
         {
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+
             sync_on_signal = 0;
             //seteo pwm normal discharge
             SIGNAL_PWM_NORMAL_DISCHARGE;
@@ -680,6 +687,7 @@ void GenerateSignal (void)
 
     //en este bloque reviso si llego un nuevo sincronismo
     //llego sync sin haber terminado la senial, la termino
+    //no blanqueo sync_on_signal para entrar bien en WAIT_FOR_SYNC
     if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC))
     {
         //seteo pwm fast discharge

@@ -11,7 +11,7 @@
 #include "comm.h"
 #include "signals.h"
 #include "uart.h"
-#include "hard.h"    //para conocer que hacer con el LED
+#include "hard.h"    //para conocer que hacer con el LED, y macros
 #include "stm32f0xx.h"
 
 #include "utils.h"
@@ -55,7 +55,7 @@ const char s_stop_treatment [] = {"stop treatment"};
 const char s_status [] = {"status"};
 const char s_flush_errors [] = {"flush errors"};
 const char s_getall [] = {"get all conf"};
-
+const char s_soft_version [] = {"soft version"};
 
 /* Module functions ---------------------------------------------------------*/
 void SetOwnChannel (unsigned char ch)
@@ -232,6 +232,13 @@ resp_t InterpretarMsg (void)
                 break;
 
             }
+        }
+
+        //-- Soft Version
+        else if (strncmp(pStr, s_soft_version, sizeof(s_soft_version) - 1) == 0)
+        {
+            sprintf(b,"[%s] %s\n", __FILE__, xstr_macro(SOFT));
+            Usart1Send(b);
         }
 
         //-- Flush Errors

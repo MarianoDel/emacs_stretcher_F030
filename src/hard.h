@@ -22,6 +22,7 @@
 // #define VER_1_1		//mismo pinout que VER_1_0
 #define VER_2_0		//micro en placa grande
 
+//----------- Software Version -------------------
 #define SOFT_VER_1_1    //usa DMA en ADC, la senial es solo la parte util, el resto son timers
                         //para la frecuencia y pid mueve timers y velocidad de muestreo
 
@@ -29,6 +30,13 @@
                         //puntero y la frecuencia saltando con ese mismo puntero
                         //sin DMA para el ADC y seniales con 0V en tabla
 
+#ifdef SOFT_VER_1_1
+#define SOFT_ANNOUNCEMENT "Software V: 1.1"
+#endif
+
+#ifdef SOFT_VER_1_0
+#define SOFT_ANNOUNCEMENT "Software V: 1.0"
+#endif
 
 //-------- Type of Program ----------------
 #define POWER_WITH_MANAGEMENT
@@ -68,8 +76,10 @@
 
 #ifdef USE_LED_FOR_DEBUG
 // #define LED_SHOW_SEQUENCE
-#define LED_SHOW_MSGS
+// #define LED_SHOW_MSGS
 // #define LED_SHOW_INT
+// #define LED_SHOW_SYNC_UART
+#define LED_SHOW_SYNC_SIGNAL
 #endif
 
 //-------- Hysteresis Conf ------------------------
@@ -155,10 +165,18 @@ typedef enum
 #define LED_TREATMENT_GENERATING    2
 #define LED_TREATMENT_JUMPER_PROTECTED    5
 
+//--- Stringtify Utils -----------------------
+#define STRING_CONCAT(str1,str2) #str1 " " #str2
+#define STRING_CONCAT_NEW_LINE(str1,str2) xstr(str1) #str2 "\n"
+#define xstr_macro(s) str_macro(s)
+#define str_macro(s) #s
 
-/* Module Functions ------------------------------------------------------------*/
+// Module Functions ----------------------------------------------------------
 void ChangeLed (unsigned char);
 void UpdateLed (void);
 
 
 #endif /* _HARD_H_ */
+
+//--- end of file ---//
+
