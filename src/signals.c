@@ -631,8 +631,11 @@ void GenerateSignal (void)
 #endif
 
             sync_on_signal = 0;
-            //seteo pwm normal discharge
-            SIGNAL_PWM_NORMAL_DISCHARGE;
+            //seteo pwm normal discharge para offset de 0 o 90
+            //para 180 debo esperar en fast discharge porque la bobina
+            //no se llega a descargar al terminar el ciclo
+            if (signal_to_gen.offset != HUNDRED_EIGHTY_DEG_OFFSET)
+                SIGNAL_PWM_NORMAL_DISCHARGE;
 
             TIM16->CNT = 0;
             gen_signal_state = GEN_SIGNAL_WAIT_T1;
@@ -642,6 +645,9 @@ void GenerateSignal (void)
     case GEN_SIGNAL_WAIT_T1:
         if (TIM16->CNT > signal_to_gen.t1)
         {
+            if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
+                SIGNAL_PWM_NORMAL_DISCHARGE;
+
             Signal_UpdatePointerReset();
             gen_signal_state = GEN_SIGNAL_DRAWING;
         }
