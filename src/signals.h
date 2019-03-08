@@ -38,7 +38,9 @@ typedef enum {
 typedef enum {
 	ZERO_DEG_OFFSET = 0,
 	NINTY_DEG_OFFSET,
-	HUNDRED_EIGHTY_DEG_OFFSET
+	HUNDRED_EIGHTY_DEG_OFFSET,
+        SIXTY_DEG_OFFSET,
+        HUNDRED_TWENTY_DEG_OFFSET
 
 } signal_offset_t;
 
@@ -84,12 +86,14 @@ typedef enum {
 //TIPO de descarga y estado de signal
 typedef enum
 {
-	GEN_SIGNAL_INIT_DISCHARGE = 0,
+	GEN_SIGNAL_INIT = 0,
         GEN_SIGNAL_WAIT_FOR_SYNC,
+        GEN_SIGNAL_WAIT_FOR_FIRST_SYNC,        
         GEN_SIGNAL_WAIT_T1,
         GEN_SIGNAL_DRAWING,
         GEN_SIGNAL_WAIT_T2,
-	GEN_SIGNAL_STOPPED_BY_INT
+	GEN_SIGNAL_STOPPED_BY_INT,
+        GEN_SIGNAL_DRAWING_ENDED
 
 } gen_signal_state_t;
 

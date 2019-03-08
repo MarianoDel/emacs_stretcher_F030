@@ -44,7 +44,7 @@ extern unsigned short pid_param_d;
 /* Global variables ---------------------------------------------------------*/
 treatment_t treatment_state = TREATMENT_INIT_FIRST_TIME;
 signals_struct_t signal_to_gen;
-gen_signal_state_t gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
+gen_signal_state_t gen_signal_state = GEN_SIGNAL_INIT;
 unsigned char global_error = 0;
 
 unsigned short * p_signal;
@@ -147,6 +147,11 @@ void Signal_DrawingReset (void);
 resp_t Signal_Drawing (void);
 void Signal_OffsetCalculate (void);
 
+void Signal_Generate_Phase_0_60_90 (void);
+void Signal_Generate_Phase_120 (void);
+void Signal_Generate_Phase_180 (void);
+
+
 // Module Functions --------------------------------------
 void TreatmentManager (void)
 {
@@ -203,10 +208,35 @@ void TreatmentManager (void)
         //Cosas que dependen de las muestras
         //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
         //la respuesta
+
         GenerateSignal();
+
+        switch (signal_to_gen.offset)
+        {
+        case ZERO_DEG_OFFSET:
+        case SIXTY_DEG_OFFSET:
+        case NINTY_DEG_OFFSET:
+            Signal_Generate_Phase_0_60_90();
+            break;
+
+        case HUNDRED_TWENTY_DEG_OFFSET:
+            Signal_Generate_Phase_120();
+            break;
+
+        case HUNDRED_EIGHTY_DEG_OFFSET:
+            Signal_Generate_Phase_180();
+            break;
+
+        default:
+            signal_to_gen.offset = ZERO_DEG_OFFSET;
+            break;
+        }
+            
 
 #ifdef USE_SOFT_OVERCURRENT
         //TODO: poner algun synchro con muestras para que no ejecute el filtro todo el tiempo
+        //TODO:
+        //TODO:
         //soft current overload check
         if (MAFilter8 (soft_overcurrent_max_current_in_cycles) > soft_overcurrent_threshold)
         {
@@ -595,18 +625,18 @@ void SendAllConf (void)
 //reset a antes de la generacion de seniales
 void GenerateSignalReset (void)
 {
-    gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
+    gen_signal_state = GEN_SIGNAL_INIT;
 }
 
-//la llama el manager para generar las seniales, si no esta el jumper de proteccion genera
-//sino espera a que sea quitado
-#define TAU_SPACE    0
+// Funcion que llama el manager para generar la senial en el canal
+// utiliza la senial de synchro desde el puerto serie
+// para dibujar la senial llama a Signal_Drawing() 
 void GenerateSignal (void)
 {
 
     switch (gen_signal_state)
     {
-    case GEN_SIGNAL_INIT_DISCHARGE:			//arranco siempre con descarga por TAU
+    case GEN_SIGNAL_INIT:	
         SIGNAL_PWM_NORMAL_DISCHARGE;
         gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
 
@@ -686,7 +716,7 @@ void GenerateSignal (void)
         break;
 
     default:
-        gen_signal_state = GEN_SIGNAL_INIT_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_INIT;
         break;
     }
 
@@ -710,6 +740,303 @@ void GenerateSignal (void)
     }
 }
 
+/////////////////////////////////////////////////////////////////
+// FUNCIONES SIGNAL_GENERATE_PHASE                             //
+// son 3, se encargan de dibujar la senial teniendo en cuenta: //
+// * sincronismo                                               //
+// * fases seleccionada                                        //
+//                                                             //
+// Funciones:                                                  //
+//  void Signal_Generate_Phase_0_60_90 (void)                  //
+//  void Signal_Generate_Phase_120 (void)                      //      
+//  void Signal_Generate_Phase_180 (void)                      //
+//                                                             //
+/////////////////////////////////////////////////////////////////
+
+// Funcion que llama el manager para generar la senial en el canal
+// utiliza la senial de synchro desde el puerto serie
+// para dibujar la senial llama a Signal_Drawing()
+// necesito conocer la fase a generar (hardcoded en la funcion)
+// los tiempos de espera, dependen de la frecuencia y de la fase
+// el control de soft_overcurrent debiera salir de aca, ya que conozco cuando dibujo o cuando no
+// siempre fast discharge hasta que tiene que generar que pasa a normal discharge
+// cuando se termine de generar el que llama a esta funcion debera poner normal discharge
+void Signal_Generate_Phase_0_60_90 (void)
+{
+
+    switch (gen_signal_state)
+    {
+    case GEN_SIGNAL_INIT:
+        SIGNAL_PWM_NORMAL_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+
+        //sync
+        sync_on_signal = 0;
+
+        //no current
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral_running = 0;
+        current_integral_ended = 0;
+#endif
+        break;
+
+    case GEN_SIGNAL_WAIT_FOR_SYNC:
+        if (sync_on_signal)
+        {
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+
+            sync_on_signal = 0;
+
+            TIM16->CNT = 0;
+            gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        }
+        break;
+
+    case GEN_SIGNAL_WAIT_T1:
+        if (TIM16->CNT > signal_to_gen.t1)
+        {
+            SIGNAL_PWM_NORMAL_DISCHARGE;
+            sequence_ready_reset;
+            
+            Signal_DrawingReset ();
+            gen_signal_state = GEN_SIGNAL_DRAWING;
+        }
+        break;
+            
+    case GEN_SIGNAL_DRAWING:
+        //en este bloque tomo la nueva muestra del ADC
+        //hago update de la senial antes de cada PID
+        //luego calculo el PID y los PWM que correspondan
+        if (sequence_ready)
+        {
+            sequence_ready_reset;    //aprox 7KHz synchro con pwm
+
+#ifdef LED_SHOW_SEQUENCE
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+            
+            if (Signal_Drawing() == resp_ended)
+            {
+                SIGNAL_PWM_FAST_DISCHARGE;
+                gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            }
+        }
+        break;
+
+    case GEN_SIGNAL_DRAWING_ENDED:
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
+#endif
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+        break;
+            
+    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
+        break;
+
+    default:
+        gen_signal_state = GEN_SIGNAL_INIT;
+        break;
+    }
+    
+}
+    
+// Senial especial, defasaje 120 grados, el synchro llega justo cuando estoy dibujando la senial
+// de todas formas espero el primer sync para arrancar
+void Signal_Generate_Phase_120 (void)
+{
+
+    switch (gen_signal_state)
+    {
+    case GEN_SIGNAL_INIT:
+        SIGNAL_PWM_NORMAL_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_FIRST_SYNC;
+
+        //sync
+        sync_on_signal = 0;
+
+        //no current
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral_running = 0;
+        current_integral_ended = 0;
+#endif
+        break;
+        
+    case GEN_SIGNAL_WAIT_FOR_FIRST_SYNC:
+        if (sync_on_signal)
+        {
+            TIM16->CNT = 0;
+            gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        }
+        break;
+
+    case GEN_SIGNAL_WAIT_T1:
+        if (TIM16->CNT > signal_to_gen.t1)
+        {
+            SIGNAL_PWM_NORMAL_DISCHARGE;
+            sequence_ready_reset;
+            
+            Signal_DrawingReset ();
+            gen_signal_state = GEN_SIGNAL_DRAWING;
+        }
+        break;
+            
+    case GEN_SIGNAL_DRAWING:
+        //en este bloque tomo la nueva muestra del ADC
+        //hago update de la senial antes de cada PID
+        //luego calculo el PID y los PWM que correspondan
+        if (sequence_ready)
+        {
+            sequence_ready_reset;    //aprox 7KHz synchro con pwm
+
+#ifdef LED_SHOW_SEQUENCE
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+            
+            if (Signal_Drawing() == resp_ended)
+            {
+                SIGNAL_PWM_FAST_DISCHARGE;
+                gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            }
+        }
+        break;
+
+    case GEN_SIGNAL_DRAWING_ENDED:
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
+#endif
+        gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        break;
+            
+    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
+        break;
+
+    default:
+        gen_signal_state = GEN_SIGNAL_INIT;
+        break;
+    }
+
+    //el synchro en general me llega en el medio de GEN_SIGNAL_DRAWING
+    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_FIRST_SYNC))
+    {
+        sync_on_signal = 0;
+        TIM16->CNT = 0;
+    }
+    
+}
+
+// Senial especial de 180 grados de defasaje, en la que el synchro
+// justo cuando estoy terminando de dibujar la senial o apenas terminado
+void Signal_Generate_Phase_180 (void)
+{
+
+    switch (gen_signal_state)
+    {
+    case GEN_SIGNAL_INIT:
+        SIGNAL_PWM_NORMAL_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+
+        //sync
+        sync_on_signal = 0;
+
+        //no current
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral_running = 0;
+        current_integral_ended = 0;
+#endif
+        break;
+
+    case GEN_SIGNAL_WAIT_FOR_SYNC:
+        if (sync_on_signal)
+        {
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+
+            sync_on_signal = 0;
+
+            TIM16->CNT = 0;
+            gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        }
+        break;
+
+    case GEN_SIGNAL_WAIT_T1:
+        if (TIM16->CNT > signal_to_gen.t1)
+        {
+            SIGNAL_PWM_NORMAL_DISCHARGE;
+            sequence_ready_reset;
+            
+            Signal_DrawingReset();
+            gen_signal_state = GEN_SIGNAL_DRAWING;
+        }
+        break;
+            
+    case GEN_SIGNAL_DRAWING:
+        //en este bloque tomo la nueva muestra del ADC
+        //hago update de la senial antes de cada PID
+        //luego calculo el PID y los PWM que correspondan
+        if (sequence_ready)
+        {
+            sequence_ready_reset;    //aprox 7KHz synchro con pwm
+
+#ifdef LED_SHOW_SEQUENCE
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+            
+            if (Signal_Drawing() == resp_ended)
+            {
+                SIGNAL_PWM_FAST_DISCHARGE;
+                gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            }
+        }
+        break;
+
+    case GEN_SIGNAL_DRAWING_ENDED:
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
+#endif
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+        break;
+            
+    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
+        break;
+
+    default:
+        gen_signal_state = GEN_SIGNAL_INIT;
+        break;
+    }
+
+    //el synchro en general me llega al final de GEN_SIGNAL_DRAWING
+    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC))
+    {
+        sync_on_signal = 0;
+        TIM16->CNT = 0;
+    }
+
+}
+
 typedef enum {
 	NORMAL_DISCHARGE = 0,
 	TAU_DISCHARGE,
@@ -722,6 +1049,11 @@ drawing_state_t drawing_state = NORMAL_DISCHARGE;
 void Signal_DrawingReset (void)
 {
     drawing_state = NORMAL_DISCHARGE;
+    d = 0;
+    ez1 = 0;
+    ez2 = 0;
+
+    Signal_UpdatePointerReset();
 }
 
 //llamar para cada punto a dibujar
@@ -799,7 +1131,7 @@ resp_t Signal_Drawing (void)
                       &ez2);
 
         //reviso si necesito cambiar a descarga por tau o normal
-        if (d < TAU_SPACE)
+        if (d < 0)
         {
             if (-d < DUTY_100_PERCENT)
                 LOW_RIGHT_PWM(DUTY_100_PERCENT + d);
