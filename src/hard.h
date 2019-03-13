@@ -23,12 +23,19 @@
 #define VER_2_0		//micro en placa grande
 
 //----------- Software Version -------------------
+// #define SOFT_VER_1_2    //usa comandos para pantalla DWIN DGUS
+                        //
+
 #define SOFT_VER_1_1    //usa DMA en ADC, la senial es solo la parte util, el resto son timers
                         //para la frecuencia y pid mueve timers y velocidad de muestreo
 
 // #define SOFT_VER_1_0    //este es el soft de las primeras placas, la senial la hacia con
                         //puntero y la frecuencia saltando con ese mismo puntero
                         //sin DMA para el ADC y seniales con 0V en tabla
+
+#ifdef SOFT_VER_1_2
+#define SOFT_ANNOUNCEMENT "Software V: 1.2"
+#endif
 
 #ifdef SOFT_VER_1_1
 #define SOFT_ANNOUNCEMENT "Software V: 1.1"

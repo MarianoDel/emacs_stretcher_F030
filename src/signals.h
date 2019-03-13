@@ -17,14 +17,8 @@
 //--- Exported types ---//
 typedef enum {
 	SQUARE_SIGNAL = 0,
-	SQUARE_SIGNAL_90,
-	SQUARE_SIGNAL_180,
 	TRIANGULAR_SIGNAL,
-	TRIANGULAR_SIGNAL_90,
-	TRIANGULAR_SIGNAL_180,
-	SINUSOIDAL_SIGNAL,
-	SINUSOIDAL_SIGNAL_90,
-	SINUSOIDAL_SIGNAL_180
+	SINUSOIDAL_SIGNAL
 
 } signal_type_t;
 
@@ -147,7 +141,7 @@ typedef enum
 
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);
-resp_t SetSignalType (signal_type_t);
+resp_t SetSignalTypeAndOffset (signal_type_t, signal_offset_t);
 resp_t SetFrequency (signal_frequency_t);
 resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);

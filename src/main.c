@@ -302,7 +302,7 @@ int main(void)
 #ifndef INT_SPEED_RESPONSE
     //prueba de nuevas rutinas
     SetOwnChannel (OWN_CHANNEL);
-    SetSignalType (SINUSOIDAL_SIGNAL);
+    SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, ZERO_DEG_OFFSET);
     SetFrequency (THIRTY_HZ);
     SetPower (50);
 #endif
@@ -315,7 +315,7 @@ int main(void)
     // SetPower (100);
 
     SetOwnChannel (OWN_CHANNEL);
-    SetSignalType (TRIANGULAR_SIGNAL);
+    SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, ZERO_DEG_OFFSET);
     SetFrequency (TEN_HZ);
     SetPower (100);
 #endif

@@ -209,7 +209,8 @@ void TreatmentManager (void)
         //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
         //la respuesta
 
-        GenerateSignal();
+        //TODO: este o los de mas abajo!!!
+        // GenerateSignal();
 
         switch (signal_to_gen.offset)
         {
@@ -437,97 +438,68 @@ void SetErrorStatus (error_t e)
 
 //recibe tipo de senial
 //setea senial y offset
-resp_t SetSignalType (signal_type_t a)
+resp_t SetSignalTypeAndOffset (signal_type_t a, signal_offset_t o)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
+        return resp_error;
+
+    if ((o == ZERO_DEG_OFFSET) ||
+        (o == SIXTY_DEG_OFFSET) ||
+        (o == NINTY_DEG_OFFSET) ||
+        (o == HUNDRED_TWENTY_DEG_OFFSET) ||
+        (o == HUNDRED_EIGHTY_DEG_OFFSET))
+    {
+        signal_to_gen.offset = o;
+    }
+    else
         return resp_error;
 
     if (a == SQUARE_SIGNAL)
     {
         p_signal = (unsigned short *) s_square_3A;
-        signal_to_gen.offset = ZERO_DEG_OFFSET;
-    }
-        
-    if (a == SQUARE_SIGNAL_90)
-    {
-        p_signal = (unsigned short *) s_square_3A;
-        signal_to_gen.offset = NINTY_DEG_OFFSET;
-    }
-        
-    if (a == SQUARE_SIGNAL_180)
-    {
-        p_signal = (unsigned short *) s_square_3A;
-        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
-    }
 
-    
-#if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
-    if (a == TRIANGULAR_SIGNAL)
-    {
-        p_signal = (unsigned short *) s_triangular_6A;
-        signal_to_gen.offset = ZERO_DEG_OFFSET;
-    }
-#else
-    if (a == TRIANGULAR_SIGNAL)
-    {
-        p_signal = (unsigned short *) s_triangular_3A;
-        signal_to_gen.offset = ZERO_DEG_OFFSET;
-    }
-        
-    if (a == TRIANGULAR_SIGNAL_90)
-    {
-        p_signal = (unsigned short *) s_triangular_3A;
-        signal_to_gen.offset = NINTY_DEG_OFFSET;
-    }
-
-    if (a == TRIANGULAR_SIGNAL_180)
-    {
-        p_signal = (unsigned short *) s_triangular_3A;
-        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
-    }
-#endif
-
-    if (a == SINUSOIDAL_SIGNAL)
-    {
-        p_signal = (unsigned short *) s_sinusoidal_3A;
-        signal_to_gen.offset = ZERO_DEG_OFFSET;
-    }
-        
-    if (a == SINUSOIDAL_SIGNAL_90)
-    {
-        p_signal = (unsigned short *) s_sinusoidal_3A;
-        signal_to_gen.offset = NINTY_DEG_OFFSET;
-    }
-
-    if (a == SINUSOIDAL_SIGNAL_180)
-    {
-        p_signal = (unsigned short *) s_sinusoidal_3A;
-        signal_to_gen.offset = HUNDRED_EIGHTY_DEG_OFFSET;
-    }
-
-    signal_to_gen.signal = a;
-
-    if ((a == SQUARE_SIGNAL) || (a == SQUARE_SIGNAL_90) || (a == SQUARE_SIGNAL_180))
-    {
         pid_param_p = PID_SQUARE_P;
         pid_param_i = PID_SQUARE_I;
         pid_param_d = PID_SQUARE_D;
-    }
 
-    if ((a == TRIANGULAR_SIGNAL) || (a == TRIANGULAR_SIGNAL_90) || (a == TRIANGULAR_SIGNAL_180))
+        signal_to_gen.signal = a;
+    }
+#if (defined USE_PROTECTION_WITH_INT) && (defined INT_SPEED_RESPONSE)
+    else if (a == TRIANGULAR_SIGNAL)
     {
+        p_signal = (unsigned short *) s_triangular_6A;
+
         pid_param_p = PID_TRIANGULAR_P;
         pid_param_i = PID_TRIANGULAR_I;
         pid_param_d = PID_TRIANGULAR_D;
+        
+        signal_to_gen.signal = a;
     }
-
-    if ((a == SINUSOIDAL_SIGNAL) || (a == SINUSOIDAL_SIGNAL_90) || (a == SINUSOIDAL_SIGNAL_180))
+#else
+    else if (a == TRIANGULAR_SIGNAL)
     {
+        p_signal = (unsigned short *) s_triangular_3A;
+
+        pid_param_p = PID_TRIANGULAR_P;
+        pid_param_i = PID_TRIANGULAR_I;
+        pid_param_d = PID_TRIANGULAR_D;
+
+        signal_to_gen.signal = a;        
+    }
+#endif
+    else if (a == SINUSOIDAL_SIGNAL)
+    {
+        p_signal = (unsigned short *) s_sinusoidal_3A;
+
         pid_param_p = PID_SINUSOIDAL_P;
         pid_param_i = PID_SINUSOIDAL_I;
         pid_param_d = PID_SINUSOIDAL_D;
+
+        signal_to_gen.signal = a;
     }
-    
+    else
+        return resp_error;
+        
     return resp_ok;
 }
 
@@ -599,7 +571,7 @@ resp_t AssertTreatmentParams (void)
         (signal_to_gen.frequency != SIXTY_HZ))
         return resp;
 
-    if (signal_to_gen.signal > SINUSOIDAL_SIGNAL_180)
+    if (signal_to_gen.signal > SINUSOIDAL_SIGNAL)
         return resp;
 
     if (signal_to_gen.offset > HUNDRED_EIGHTY_DEG_OFFSET)
@@ -824,20 +796,20 @@ void Signal_Generate_Phase_0_60_90 (void)
 #endif
             
             if (Signal_Drawing() == resp_ended)
-            {
-                SIGNAL_PWM_FAST_DISCHARGE;
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-            }
         }
         break;
 
     case GEN_SIGNAL_DRAWING_ENDED:
+
+        SIGNAL_PWM_FAST_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+
 #ifdef USE_SOFT_NO_CURRENT
         current_integral = current_integral_running;
         current_integral_running = 0;
         current_integral_ended = 1;
 #endif
-        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
         break;
             
     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
@@ -874,8 +846,16 @@ void Signal_Generate_Phase_120 (void)
     case GEN_SIGNAL_WAIT_FOR_FIRST_SYNC:
         if (sync_on_signal)
         {
+            sync_on_signal = 0;
             TIM16->CNT = 0;
             gen_signal_state = GEN_SIGNAL_WAIT_T1;
+
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif            
         }
         break;
 
@@ -906,20 +886,20 @@ void Signal_Generate_Phase_120 (void)
 #endif
             
             if (Signal_Drawing() == resp_ended)
-            {
-                SIGNAL_PWM_FAST_DISCHARGE;
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-            }
         }
         break;
 
     case GEN_SIGNAL_DRAWING_ENDED:
+
+        SIGNAL_PWM_FAST_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        
 #ifdef USE_SOFT_NO_CURRENT
         current_integral = current_integral_running;
         current_integral_running = 0;
         current_integral_ended = 1;
 #endif
-        gen_signal_state = GEN_SIGNAL_WAIT_T1;
         break;
             
     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
@@ -935,6 +915,13 @@ void Signal_Generate_Phase_120 (void)
     {
         sync_on_signal = 0;
         TIM16->CNT = 0;
+
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif        
     }
     
 }
@@ -1004,20 +991,20 @@ void Signal_Generate_Phase_180 (void)
 #endif
             
             if (Signal_Drawing() == resp_ended)
-            {
-                SIGNAL_PWM_FAST_DISCHARGE;
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-            }
         }
         break;
 
     case GEN_SIGNAL_DRAWING_ENDED:
+
+        SIGNAL_PWM_FAST_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
+        
 #ifdef USE_SOFT_NO_CURRENT
         current_integral = current_integral_running;
         current_integral_running = 0;
         current_integral_ended = 1;
 #endif
-        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
         break;
             
     case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
@@ -1029,10 +1016,12 @@ void Signal_Generate_Phase_180 (void)
     }
 
     //el synchro en general me llega al final de GEN_SIGNAL_DRAWING
-    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC))
+    if ((sync_on_signal) &&
+        (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC) &&
+        (gen_signal_state == GEN_SIGNAL_DRAWING))
     {
-        sync_on_signal = 0;
-        TIM16->CNT = 0;
+        //no le doy ack al sync
+        gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
     }
 
 }
@@ -1172,12 +1161,15 @@ resp_t Signal_UpdatePointer (void)
     {
         p_signal_running += 1;
 #ifdef USE_SOFT_NO_CURRENT
+        //TODO: pasar esto a Signal_Drawing, que aca solo quede el puntero de senial
         current_integral_running += I_Sense;
 #endif
     }
     else    //termino la senial seteo fast discharge y aviso
     {                        
         //seteo pwm fast discharge
+        //TODO: seteo fast discharge aca, tambien en Signal_Drawing, se repite
+        //TODO: reseteo puntero y tambien en Signal_Drawing, se repite
         SIGNAL_PWM_FAST_DISCHARGE;
         Signal_UpdatePointerReset();
         
@@ -1190,6 +1182,7 @@ resp_t Signal_UpdatePointer (void)
     }
 
     //-- Soft Overcurrent --//
+    //TODO: pasar esto a Signal_Drawing, que aca solo quede el puntero de senial
 #ifdef USE_SOFT_OVERCURRENT
     soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
     if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
