@@ -183,6 +183,11 @@ void TreatmentManager (void)
             over_c = over_c / 1000;
             soft_overcurrent_threshold = (unsigned short) over_c;
             MA8Circular_Reset();
+            soft_overcurrent_max_current_in_cycles = 0;
+            
+            // char b [64];
+            // sprintf(b, "thresh: %d\n", soft_overcurrent_threshold);
+            // Usart1Send(b);            
 #endif
 #ifdef USE_SOFT_NO_CURRENT
             current_integral_errors = 0;
@@ -231,6 +236,7 @@ void TreatmentManager (void)
 #ifdef USE_SOFT_OVERCURRENT
         if (soft_overcurrent_max_current_in_cycles > soft_overcurrent_threshold)
         {
+            soft_overcurrent_max_current_in_cycles = 0;
             treatment_state = TREATMENT_STOPPING;
             SetErrorStatus(ERROR_SOFT_OVERCURRENT);
         }
@@ -672,13 +678,13 @@ void Signal_Generate_Phase_0_90_120 (void)
             else
             {
                 //resuelvo lo referido a la senial cuando estoy dibujando
-#ifdef USE_SOFT_OVERCURRENT
-                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-#endif
-                
 #ifdef USE_SOFT_NO_CURRENT
                 current_integral_running += I_Sense;
 #endif                
+
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
+#endif
             }
         }
         break;
@@ -773,13 +779,13 @@ void Signal_Generate_Phase_180 (void)
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
             else
             {
-                //resuelvo lo referido a la senial cuando estoy dibujando
-#ifdef USE_SOFT_OVERCURRENT
-                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-#endif
-                
+                //resuelvo lo referido a la senial cuando estoy dibujando                
 #ifdef USE_SOFT_NO_CURRENT
                 current_integral_running += I_Sense;
+#endif
+                
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
 #endif                
             }
         }
@@ -886,13 +892,13 @@ void Signal_Generate_Phase_240 (void)
             else
             {
                 //resuelvo lo referido a la senial cuando estoy dibujando
-#ifdef USE_SOFT_OVERCURRENT
-                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
-#endif
-                
 #ifdef USE_SOFT_NO_CURRENT
                 current_integral_running += I_Sense;
 #endif                                
+
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
+#endif
             }
         }
         break;

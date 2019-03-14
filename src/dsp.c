@@ -70,7 +70,7 @@ void MA8Circular_Reset (void)
     
     MA8Circular_Start();
     for (i = 0; i < 8; i++)
-        *(p_ma8 + i) = 0;
+        v_ma8[i] = 0;
 }
 
 //Filtro circular, necesito activar previamente con MA8Circular_Start()
@@ -83,11 +83,9 @@ unsigned short MA8Circular (unsigned short new_sample)
 
     *p_ma8 = new_sample;
 
-    total_ma = *(v_ma8) + *(v_ma8 + 1) + *(v_ma8 + 2) +
-        *(v_ma8 + 3) + *(v_ma8 + 4) + *(v_ma8 + 5) +
-        *(v_ma8 + 6) + *(v_ma8 + 7);
+    total_ma = v_ma8[0] + v_ma8[1] + v_ma8[2] + v_ma8[3] + v_ma8[4] + v_ma8[5] + v_ma8[6] + v_ma8[7];
 
-    if (p_ma8 < (v_ma8 + 8))
+    if (p_ma8 < (v_ma8 + 7))
         p_ma8 += 1;
     else
         p_ma8 = &v_ma8[0];
