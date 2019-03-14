@@ -28,6 +28,10 @@ short error_z2 = 0;
 short d_last = 0;
 #endif
 
+#ifdef USE_MA8_CIRCULAR
+unsigned short v_ma8 [8];
+unsigned short * p_ma8;
+#endif
 /* Module Definitions ---------------------------------------------------------*/
 //todos se dividen por 128
 #define KPV	857			// 6.7 desde python PI_zpk_KpKi.py
@@ -51,6 +55,46 @@ unsigned short RandomGen (unsigned int seed)
 	return (unsigned short) random;
 
 }
+
+#ifdef USE_MA8_CIRCULAR
+//seteo de punteros del filtro circular
+void MA8Circular_Start (void)
+{
+    p_ma8 = &v_ma8[0];
+}
+
+//reset de punteros al filtro circular
+void MA8Circular_Reset (void)
+{
+    unsigned char i;
+    
+    MA8Circular_Start();
+    for (i = 0; i < 8; i++)
+        *(p_ma8 + i) = 0;
+}
+
+//Filtro circular, necesito activar previamente con MA8Circular_Start()
+//MA8Circular_Reset() vacia el filtro
+//recibe: new_sample
+//contesta: resultado
+unsigned short MA8Circular (unsigned short new_sample)
+{
+    unsigned int total_ma;
+
+    *p_ma8 = new_sample;
+
+    total_ma = *(v_ma8) + *(v_ma8 + 1) + *(v_ma8 + 2) +
+        *(v_ma8 + 3) + *(v_ma8 + 4) + *(v_ma8 + 5) +
+        *(v_ma8 + 6) + *(v_ma8 + 7);
+
+    if (p_ma8 < (v_ma8 + 8))
+        p_ma8 += 1;
+    else
+        p_ma8 = &v_ma8[0];
+
+    return (unsigned short) (total_ma >> 3);
+}
+#endif
 
 unsigned short MAFilterFast (unsigned short new_sample, unsigned short * vsample)
 {

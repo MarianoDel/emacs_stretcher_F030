@@ -57,9 +57,8 @@ short ez2 = 0;
 
 //-- para determinacion de soft overcurrent ------------
 #ifdef USE_SOFT_OVERCURRENT
-unsigned short soft_overcurrent_max_current_in_cycles [SIZEOF_OVERCURRENT_BUFF];
+unsigned short soft_overcurrent_max_current_in_cycles = 0;
 unsigned short soft_overcurrent_threshold = 0;
-unsigned short soft_overcurrent_index = 0;
 #endif
 
 //-- para determinar no current
@@ -159,6 +158,7 @@ void TreatmentManager (void)
     {
     case TREATMENT_INIT_FIRST_TIME:
         SIGNAL_PWM_NORMAL_DISCHARGE;
+        MA8Circular_Start();
 
         if (AssertTreatmentParams() == resp_ok)
         {
@@ -178,11 +178,11 @@ void TreatmentManager (void)
 
 #ifdef USE_SOFT_OVERCURRENT
             //cargo valor maximo de corriente para el soft_overcurrent
-            soft_overcurrent_threshold = 1.2 * I_MAX * signal_to_gen.power / 100;
-            soft_overcurrent_index = 0;
-
-            for (unsigned char i = 0; i < SIZEOF_OVERCURRENT_BUFF; i++)
-                soft_overcurrent_max_current_in_cycles[i] = 0;
+            // soft_overcurrent_threshold = 1.2 * I_MAX * signal_to_gen.power / 100;
+            unsigned int over_c = 12 * I_MAX * signal_to_gen.power;
+            over_c = over_c / 1000;
+            soft_overcurrent_threshold = (unsigned short) over_c;
+            MA8Circular_Reset();
 #endif
 #ifdef USE_SOFT_NO_CURRENT
             current_integral_errors = 0;
@@ -206,12 +206,6 @@ void TreatmentManager (void)
 
     case TREATMENT_GENERATING:
         //Cosas que dependen de las muestras
-        //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
-        //la respuesta
-
-        //TODO: este o los de mas abajo!!!
-        // GenerateSignal();
-
         switch (signal_to_gen.offset)
         {
         case ZERO_DEG_OFFSET:
@@ -235,11 +229,7 @@ void TreatmentManager (void)
             
 
 #ifdef USE_SOFT_OVERCURRENT
-        //TODO: poner algun synchro con muestras para que no ejecute el filtro todo el tiempo
-        //TODO:
-        //TODO:
-        //soft current overload check
-        if (MAFilter8 (soft_overcurrent_max_current_in_cycles) > soft_overcurrent_threshold)
+        if (soft_overcurrent_max_current_in_cycles > soft_overcurrent_threshold)
         {
             treatment_state = TREATMENT_STOPPING;
             SetErrorStatus(ERROR_SOFT_OVERCURRENT);
@@ -324,55 +314,55 @@ void TreatmentManager (void)
     
 }
 
-void TreatmentManager_IntSpeed (void)
-{
-    switch (treatment_state)
-    {
-        case TREATMENT_INIT_FIRST_TIME:
-            if (!timer_signals)
-            {
-                HIGH_LEFT_PWM(0);
-                LOW_LEFT_PWM(0);
-                HIGH_RIGHT_PWM(0);
-                LOW_RIGHT_PWM(DUTY_ALWAYS);
+// void TreatmentManager_IntSpeed (void)
+// {
+//     switch (treatment_state)
+//     {
+//         case TREATMENT_INIT_FIRST_TIME:
+//             if (!timer_signals)
+//             {
+//                 HIGH_LEFT_PWM(0);
+//                 LOW_LEFT_PWM(0);
+//                 HIGH_RIGHT_PWM(0);
+//                 LOW_RIGHT_PWM(DUTY_ALWAYS);
 
-                if (GetErrorStatus() == ERROR_OK)
-                {
-                    GenerateSignalReset();
-                    treatment_state = TREATMENT_GENERATING;
-                    LED_OFF;
-                    EXTIOn();
-                }
-            }
-            break;
+//                 if (GetErrorStatus() == ERROR_OK)
+//                 {
+//                     GenerateSignalReset();
+//                     treatment_state = TREATMENT_GENERATING;
+//                     LED_OFF;
+//                     EXTIOn();
+//                 }
+//             }
+//             break;
 
-        case TREATMENT_GENERATING:
-            //Cosas que dependen de las muestras
-            //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
-            //la respuesta
-            GenerateSignal();
+//         case TREATMENT_GENERATING:
+//             //Cosas que dependen de las muestras
+//             //se la puede llamar las veces que sea necesario y entre funciones, para acelerar
+//             //la respuesta
+//             GenerateSignal();
 
-            break;
+//             break;
 
-        case TREATMENT_STOPPING2:		//aca lo manda directamente la int
-            if (!timer_signals)
-            {
-                treatment_state = TREATMENT_INIT_FIRST_TIME;
-                EXTIOff();
-                ENABLE_TIM3;
-#ifdef LED_SHOW_INT
-                LED_OFF;
-#endif
-                SetErrorStatus(ERROR_FLUSH_MASK);
-                timer_signals = 30;    //30ms mas de demora despues de int
-            }
-            break;
+//         case TREATMENT_STOPPING2:		//aca lo manda directamente la int
+//             if (!timer_signals)
+//             {
+//                 treatment_state = TREATMENT_INIT_FIRST_TIME;
+//                 EXTIOff();
+//                 ENABLE_TIM3;
+// #ifdef LED_SHOW_INT
+//                 LED_OFF;
+// #endif
+//                 SetErrorStatus(ERROR_FLUSH_MASK);
+//                 timer_signals = 30;    //30ms mas de demora despues de int
+//             }
+//             break;
 
-        default:
-            treatment_state = TREATMENT_INIT_FIRST_TIME;
-            break;
-    }
-}
+//         default:
+//             treatment_state = TREATMENT_INIT_FIRST_TIME;
+//             break;
+//     }
+// }
 
 treatment_t GetTreatmentState (void)
 {
@@ -594,118 +584,6 @@ void GenerateSignalReset (void)
     gen_signal_state = GEN_SIGNAL_INIT;
 }
 
-// Funcion que llama el manager para generar la senial en el canal
-// utiliza la senial de synchro desde el puerto serie
-// para dibujar la senial llama a Signal_Drawing() 
-void GenerateSignal (void)
-{
-
-    switch (gen_signal_state)
-    {
-    case GEN_SIGNAL_INIT:	
-        SIGNAL_PWM_NORMAL_DISCHARGE;
-        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-
-        //sync
-        sync_on_signal = 0;
-
-        //no current
-#ifdef USE_SOFT_NO_CURRENT
-        current_integral_running = 0;
-        current_integral_ended = 0;
-#endif
-        break;
-
-    case GEN_SIGNAL_WAIT_FOR_SYNC:
-        if (sync_on_signal)
-        {
-#ifdef LED_SHOW_SYNC_SIGNAL
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-#endif
-
-            sync_on_signal = 0;
-            //seteo pwm normal discharge para offset de 0 o 90
-            //para 180 debo esperar en fast discharge porque la bobina
-            //no se llega a descargar al terminar el ciclo
-            if (signal_to_gen.offset != HUNDRED_EIGHTY_DEG_OFFSET)
-                SIGNAL_PWM_NORMAL_DISCHARGE;
-
-            TIM16->CNT = 0;
-            gen_signal_state = GEN_SIGNAL_WAIT_T1;
-        }
-        break;
-
-    case GEN_SIGNAL_WAIT_T1:
-        if (TIM16->CNT > signal_to_gen.t1)
-        {
-            if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-                SIGNAL_PWM_NORMAL_DISCHARGE;
-
-            Signal_UpdatePointerReset();
-            gen_signal_state = GEN_SIGNAL_DRAWING;
-        }
-        break;
-            
-    case GEN_SIGNAL_DRAWING:
-        //en este bloque tomo la nueva muestra del ADC
-        //hago update de la senial antes de cada PID
-        //luego calculo el PID y los PWM que correspondan
-        if (sequence_ready)
-        {
-            sequence_ready_reset;    //aprox 7KHz synchro con pwm
-#ifdef LED_SHOW_SEQUENCE
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-#endif
-            
-            if (Signal_Drawing() == resp_ended)
-            {
-                SIGNAL_PWM_FAST_DISCHARGE;
-                TIM16->CNT = 0;
-                gen_signal_state = GEN_SIGNAL_WAIT_T2;
-            }
-        }
-        break;
-
-    case GEN_SIGNAL_WAIT_T2:
-        if (TIM16->CNT > signal_to_gen.t2)
-            gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-        
-        break;
-            
-    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
-        break;
-
-    default:
-        gen_signal_state = GEN_SIGNAL_INIT;
-        break;
-    }
-
-
-    //en este bloque reviso si llego un nuevo sincronismo
-    //llego sync sin haber terminado la senial, la termino
-    //no blanqueo sync_on_signal para entrar bien en WAIT_FOR_SYNC
-    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_SYNC))
-    {
-        //seteo pwm fast discharge
-        SIGNAL_PWM_FAST_DISCHARGE;
-
-        gen_signal_state = GEN_SIGNAL_WAIT_FOR_SYNC;
-        Signal_UpdatePointerReset();
-                
-#ifdef USE_SOFT_NO_CURRENT
-        current_integral = current_integral_running;
-        current_integral_running = 0;
-        current_integral_ended = 1;
-#endif
-    }
-}
-
 /////////////////////////////////////////////////////////////////
 // FUNCIONES SIGNAL_GENERATE_PHASE                             //
 // son 3, se encargan de dibujar la senial teniendo en cuenta: //
@@ -789,8 +667,19 @@ void Signal_Generate_Phase_0_90_120 (void)
                 LED_ON;
 #endif
             
-            if (Signal_Drawing() == resp_ended)
+            if (Signal_Drawing() == resp_ended) //resuelvo lo referido al final de la senial
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            else
+            {
+                //resuelvo lo referido a la senial cuando estoy dibujando
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
+#endif
+                
+#ifdef USE_SOFT_NO_CURRENT
+                current_integral_running += I_Sense;
+#endif                
+            }
         }
         break;
 
@@ -882,6 +771,17 @@ void Signal_Generate_Phase_180 (void)
             
             if (Signal_Drawing() == resp_ended)
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            else
+            {
+                //resuelvo lo referido a la senial cuando estoy dibujando
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
+#endif
+                
+#ifdef USE_SOFT_NO_CURRENT
+                current_integral_running += I_Sense;
+#endif                
+            }
         }
         break;
 
@@ -983,6 +883,17 @@ void Signal_Generate_Phase_240 (void)
             
             if (Signal_Drawing() == resp_ended)
                 gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+            else
+            {
+                //resuelvo lo referido a la senial cuando estoy dibujando
+#ifdef USE_SOFT_OVERCURRENT
+                soft_overcurrent_max_current_in_cycles = MA8Circular(I_Sense);
+#endif
+                
+#ifdef USE_SOFT_NO_CURRENT
+                current_integral_running += I_Sense;
+#endif                                
+            }
         }
         break;
 
@@ -1157,36 +1068,12 @@ resp_t Signal_UpdatePointer (void)
     if ((p_signal_running) < (p_signal + SIZEOF_SIGNALS))
     {
         p_signal_running += 1;
-#ifdef USE_SOFT_NO_CURRENT
-        //TODO: pasar esto a Signal_Drawing, que aca solo quede el puntero de senial
-        current_integral_running += I_Sense;
-#endif
     }
-    else    //termino la senial seteo fast discharge y aviso
+    else    //termino la senial, aviso
     {                        
-        //seteo pwm fast discharge
-        //TODO: seteo fast discharge aca, tambien en Signal_Drawing, se repite
-        //TODO: reseteo puntero y tambien en Signal_Drawing, se repite
-        SIGNAL_PWM_FAST_DISCHARGE;
-        Signal_UpdatePointerReset();
-        
-#ifdef USE_SOFT_NO_CURRENT
-        current_integral = current_integral_running;
-        current_integral_running = 0;
-        current_integral_ended = 1;
-#endif
         resp = resp_ended;
     }
 
-    //-- Soft Overcurrent --//
-    //TODO: pasar esto a Signal_Drawing, que aca solo quede el puntero de senial
-#ifdef USE_SOFT_OVERCURRENT
-    soft_overcurrent_max_current_in_cycles[soft_overcurrent_index] = I_Sense;
-    if (soft_overcurrent_index < (SIZEOF_OVERCURRENT_BUFF - 1))
-        soft_overcurrent_index++;
-    else
-        soft_overcurrent_index = 0;
-#endif
     return resp;
 }
 

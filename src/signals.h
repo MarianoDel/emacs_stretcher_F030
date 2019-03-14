@@ -104,8 +104,6 @@ typedef enum
 #define ERROR_SOFT_OVERCURRENT_MASK		0x08
 #define ERROR_FLUSH_MASK					0xff
 
-#define SIZEOF_OVERCURRENT_BUFF			8
-
 #define CURRENT_INTEGRAL_MAX_ERRORS        SIGNAL_ADMITED_WITH_NO_CURRENT
 //TODO: cambiar esto si la senial generada tiene la misma cantidad de puntos para todas las freq
 #define CURRENT_INTEGRAL_THRESHOLD_10HZ         270
@@ -145,7 +143,7 @@ resp_t SetSignalTypeAndOffset (signal_type_t, signal_offset_t);
 resp_t SetFrequency (signal_frequency_t);
 resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);
-void GenerateSignal (void);
+
 resp_t AssertTreatmentParams (void);
 resp_t StartTreatment (void);
 void StopTreatment (void);

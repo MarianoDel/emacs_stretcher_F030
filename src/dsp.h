@@ -14,7 +14,7 @@
 
 //--- Exported constants ---//
 #define USE_PID_CONTROLLERS
-
+#define USE_MA8_CIRCULAR
 
 //--- Module Functions ---//
 unsigned short RandomGen (unsigned int);
@@ -29,6 +29,8 @@ unsigned short MAFilter32Circular (unsigned short, unsigned short *, unsigned ch
 short PID (short, short);
 short PID_roof (short, short, short, short *, short *);
 
-
+void MA8Circular_Start (void);
+void MA8Circular_Reset (void);
+unsigned short MA8Circular (unsigned short);
 
 #endif /* _DSP_H_ */
