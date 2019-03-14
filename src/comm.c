@@ -43,11 +43,11 @@ const char s_square [] = {"square"};
 const char s_triangular [] = {"triangular"};
 const char s_sinusoidal [] = {"sinusoidal"};
 
-const char s_offset_0 [] = {" 0"};
-const char s_offset_60 [] = {" 60"};
-const char s_offset_90 [] = {" 90"};
-const char s_offset_120 [] = {" 120"};
-const char s_offset_180 [] = {" 180"};
+const char s_offset_0 [] = {"0"};
+const char s_offset_90 [] = {"90"};
+const char s_offset_120 [] = {"120"};
+const char s_offset_180 [] = {"180"};
+const char s_offset_240 [] = {"240"};
 
 const char s_ten_hz [] = {"10Hz"};
 const char s_thirty_hz [] = {"30Hz"};
@@ -131,48 +131,54 @@ resp_t InterpretarMsg (void)
 
             if (strncmp(pStr, s_square, sizeof(s_square) - 1) == 0)
             {
+                pStr += sizeof(s_square);		//normalizo al payload, hay un espacio
+                
                 if (strncmp(pStr, s_offset_0, sizeof(s_offset_0) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, ZERO_DEG_OFFSET);
-                else if (strncmp(pStr, s_offset_60, sizeof(s_offset_60) - 1) == 0)
-                    resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, SIXTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_90, sizeof(s_offset_90) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, NINTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_120, sizeof(s_offset_120) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, HUNDRED_TWENTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_180, sizeof(s_offset_180) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, HUNDRED_EIGHTY_DEG_OFFSET);
+                else if (strncmp(pStr, s_offset_240, sizeof(s_offset_240) - 1) == 0)
+                    resp = SetSignalTypeAndOffset (SQUARE_SIGNAL, TWO_HUNDRED_FORTY_DEG_OFFSET);
                 else
                     resp = resp_error;
             }
             
             else if (strncmp(pStr, s_triangular, sizeof(s_triangular) - 1) == 0)
             {
+                pStr += sizeof(s_triangular);		//normalizo al payload, hay un espacio
+                
                 if (strncmp(pStr, s_offset_0, sizeof(s_offset_0) - 1) == 0)
                     resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, ZERO_DEG_OFFSET);
-                else if (strncmp(pStr, s_offset_60, sizeof(s_offset_60) - 1) == 0)
-                    resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, SIXTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_90, sizeof(s_offset_90) - 1) == 0)
                     resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, NINTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_120, sizeof(s_offset_120) - 1) == 0)
                     resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, HUNDRED_TWENTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_180, sizeof(s_offset_180) - 1) == 0)
                     resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, HUNDRED_EIGHTY_DEG_OFFSET);
+                else if (strncmp(pStr, s_offset_240, sizeof(s_offset_240) - 1) == 0)
+                    resp = SetSignalTypeAndOffset (TRIANGULAR_SIGNAL, TWO_HUNDRED_FORTY_DEG_OFFSET);
                 else
                     resp = resp_error;
             }
             
             else if (strncmp(pStr, s_sinusoidal, sizeof(s_sinusoidal) - 1) == 0)
             {
+                pStr += sizeof(s_sinusoidal);		//normalizo al payload, hay un espacio
+                
                 if (strncmp(pStr, s_offset_0, sizeof(s_offset_0) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, ZERO_DEG_OFFSET);
-                else if (strncmp(pStr, s_offset_60, sizeof(s_offset_60) - 1) == 0)
-                    resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, SIXTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_90, sizeof(s_offset_90) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, NINTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_120, sizeof(s_offset_120) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, HUNDRED_TWENTY_DEG_OFFSET);
                 else if (strncmp(pStr, s_offset_180, sizeof(s_offset_180) - 1) == 0)
                     resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, HUNDRED_EIGHTY_DEG_OFFSET);
+                else if (strncmp(pStr, s_offset_240, sizeof(s_offset_240) - 1) == 0)
+                    resp = SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, TWO_HUNDRED_FORTY_DEG_OFFSET);
                 else
                     resp = resp_error;                
             }

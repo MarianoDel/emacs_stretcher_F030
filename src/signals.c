@@ -147,9 +147,9 @@ void Signal_DrawingReset (void);
 resp_t Signal_Drawing (void);
 void Signal_OffsetCalculate (void);
 
-void Signal_Generate_Phase_0_60_90 (void);
-void Signal_Generate_Phase_120 (void);
+void Signal_Generate_Phase_0_90_120 (void);
 void Signal_Generate_Phase_180 (void);
+void Signal_Generate_Phase_240 (void);
 
 
 // Module Functions --------------------------------------
@@ -215,19 +215,19 @@ void TreatmentManager (void)
         switch (signal_to_gen.offset)
         {
         case ZERO_DEG_OFFSET:
-        case SIXTY_DEG_OFFSET:
         case NINTY_DEG_OFFSET:
-            Signal_Generate_Phase_0_60_90();
-            break;
-
         case HUNDRED_TWENTY_DEG_OFFSET:
-            Signal_Generate_Phase_120();
+            Signal_Generate_Phase_0_90_120();
             break;
 
         case HUNDRED_EIGHTY_DEG_OFFSET:
             Signal_Generate_Phase_180();
             break;
 
+        case TWO_HUNDRED_FORTY_DEG_OFFSET:
+            Signal_Generate_Phase_240();
+            break;
+            
         default:
             signal_to_gen.offset = ZERO_DEG_OFFSET;
             break;
@@ -438,19 +438,13 @@ void SetErrorStatus (error_t e)
 
 //recibe tipo de senial
 //setea senial y offset
-resp_t SetSignalTypeAndOffset (signal_type_t a, signal_offset_t o)
+resp_t SetSignalTypeAndOffset (signal_type_t a, signal_offset_t offset)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
 
-    if ((o == ZERO_DEG_OFFSET) ||
-        (o == SIXTY_DEG_OFFSET) ||
-        (o == NINTY_DEG_OFFSET) ||
-        (o == HUNDRED_TWENTY_DEG_OFFSET) ||
-        (o == HUNDRED_EIGHTY_DEG_OFFSET))
-    {
-        signal_to_gen.offset = o;
-    }
+    if (offset <= TWO_HUNDRED_FORTY_DEG_OFFSET)
+        signal_to_gen.offset = offset;
     else
         return resp_error;
 
@@ -574,10 +568,10 @@ resp_t AssertTreatmentParams (void)
     if (signal_to_gen.signal > SINUSOIDAL_SIGNAL)
         return resp;
 
-    if (signal_to_gen.offset > HUNDRED_EIGHTY_DEG_OFFSET)
+    if (signal_to_gen.offset > TWO_HUNDRED_FORTY_DEG_OFFSET)
         return resp;
     
-    //TODO: revisar tambien puntero!!!!
+    //TODO: revisar tambien puntero  senial!!!!
     return resp_ok;
 }
 
@@ -588,7 +582,7 @@ void SendAllConf (void)
     Usart1Send(b);
     sprintf(b, "signal: %d\n", signal_to_gen.signal);
     Usart1Send(b);
-    sprintf(b, "freq: %d, offset: %d\n", signal_to_gen.frequency, signal_to_gen.offset * 90);
+    sprintf(b, "freq: %d, offset: %d\n", signal_to_gen.frequency, signal_to_gen.offset);
     Usart1Send(b);
     sprintf(b, "power: %d\n\n", signal_to_gen.power);
     Usart1Send(b);
@@ -719,9 +713,9 @@ void GenerateSignal (void)
 // * fases seleccionada                                        //
 //                                                             //
 // Funciones:                                                  //
-//  void Signal_Generate_Phase_0_60_90 (void)                  //
-//  void Signal_Generate_Phase_120 (void)                      //      
-//  void Signal_Generate_Phase_180 (void)                      //
+//  void Signal_Generate_Phase_0_90_120 (void)                  //
+//  void Signal_Generate_Phase_180 (void)                      //      
+//  void Signal_Generate_Phase_240 (void)                      //
 //                                                             //
 /////////////////////////////////////////////////////////////////
 
@@ -733,7 +727,7 @@ void GenerateSignal (void)
 // el control de soft_overcurrent debiera salir de aca, ya que conozco cuando dibujo o cuando no
 // siempre fast discharge hasta que tiene que generar que pasa a normal discharge
 // cuando se termine de generar el que llama a esta funcion debera poner normal discharge
-void Signal_Generate_Phase_0_60_90 (void)
+void Signal_Generate_Phase_0_90_120 (void)
 {
 
     switch (gen_signal_state)
@@ -822,110 +816,6 @@ void Signal_Generate_Phase_0_60_90 (void)
     
 }
     
-// Senial especial, defasaje 120 grados, el synchro llega justo cuando estoy dibujando la senial
-// de todas formas espero el primer sync para arrancar
-void Signal_Generate_Phase_120 (void)
-{
-
-    switch (gen_signal_state)
-    {
-    case GEN_SIGNAL_INIT:
-        SIGNAL_PWM_NORMAL_DISCHARGE;
-        gen_signal_state = GEN_SIGNAL_WAIT_FOR_FIRST_SYNC;
-
-        //sync
-        sync_on_signal = 0;
-
-        //no current
-#ifdef USE_SOFT_NO_CURRENT
-        current_integral_running = 0;
-        current_integral_ended = 0;
-#endif
-        break;
-        
-    case GEN_SIGNAL_WAIT_FOR_FIRST_SYNC:
-        if (sync_on_signal)
-        {
-            sync_on_signal = 0;
-            TIM16->CNT = 0;
-            gen_signal_state = GEN_SIGNAL_WAIT_T1;
-
-#ifdef LED_SHOW_SYNC_SIGNAL
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-#endif            
-        }
-        break;
-
-    case GEN_SIGNAL_WAIT_T1:
-        if (TIM16->CNT > signal_to_gen.t1)
-        {
-            SIGNAL_PWM_NORMAL_DISCHARGE;
-            sequence_ready_reset;
-            
-            Signal_DrawingReset ();
-            gen_signal_state = GEN_SIGNAL_DRAWING;
-        }
-        break;
-            
-    case GEN_SIGNAL_DRAWING:
-        //en este bloque tomo la nueva muestra del ADC
-        //hago update de la senial antes de cada PID
-        //luego calculo el PID y los PWM que correspondan
-        if (sequence_ready)
-        {
-            sequence_ready_reset;    //aprox 7KHz synchro con pwm
-
-#ifdef LED_SHOW_SEQUENCE
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-#endif
-            
-            if (Signal_Drawing() == resp_ended)
-                gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
-        }
-        break;
-
-    case GEN_SIGNAL_DRAWING_ENDED:
-
-        SIGNAL_PWM_FAST_DISCHARGE;
-        gen_signal_state = GEN_SIGNAL_WAIT_T1;
-        
-#ifdef USE_SOFT_NO_CURRENT
-        current_integral = current_integral_running;
-        current_integral_running = 0;
-        current_integral_ended = 1;
-#endif
-        break;
-            
-    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
-        break;
-
-    default:
-        gen_signal_state = GEN_SIGNAL_INIT;
-        break;
-    }
-
-    //el synchro en general me llega en el medio de GEN_SIGNAL_DRAWING
-    if ((sync_on_signal) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_FIRST_SYNC))
-    {
-        sync_on_signal = 0;
-        TIM16->CNT = 0;
-
-#ifdef LED_SHOW_SYNC_SIGNAL
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-#endif        
-    }
-    
-}
-
 // Senial especial de 180 grados de defasaje, en la que el synchro
 // justo cuando estoy terminando de dibujar la senial o apenas terminado
 void Signal_Generate_Phase_180 (void)
@@ -1024,6 +914,113 @@ void Signal_Generate_Phase_180 (void)
         gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
     }
 
+}
+
+// Senial especial, defasaje 240 grados, el synchro llega justo cuando estoy dibujando la senial
+// de todas formas espero el primer sync para arrancar
+// uso sync_on_signal como un doble flag
+void Signal_Generate_Phase_240 (void)
+{
+
+    switch (gen_signal_state)
+    {
+    case GEN_SIGNAL_INIT:
+        SIGNAL_PWM_NORMAL_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_FOR_FIRST_SYNC;
+
+        //sync
+        sync_on_signal = 0;
+
+        //no current
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral_running = 0;
+        current_integral_ended = 0;
+#endif
+        break;
+        
+    case GEN_SIGNAL_WAIT_FOR_FIRST_SYNC:
+        if (sync_on_signal)
+        {
+            sync_on_signal = 2;
+            TIM16->CNT = 0;
+            gen_signal_state = GEN_SIGNAL_WAIT_T1;
+
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif            
+        }
+        break;
+
+    case GEN_SIGNAL_WAIT_T1:
+        if ((TIM16->CNT > signal_to_gen.t1) && (sync_on_signal == 2))
+        {            
+            SIGNAL_PWM_NORMAL_DISCHARGE;
+            sequence_ready_reset;
+            sync_on_signal = 0;
+            
+            Signal_DrawingReset ();
+            gen_signal_state = GEN_SIGNAL_DRAWING;
+        }
+        break;
+            
+    case GEN_SIGNAL_DRAWING:
+        //en este bloque tomo la nueva muestra del ADC
+        //hago update de la senial antes de cada PID
+        //luego calculo el PID y los PWM que correspondan
+        if (sequence_ready)
+        {
+            sequence_ready_reset;    //aprox 7KHz synchro con pwm
+
+#ifdef LED_SHOW_SEQUENCE
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+            
+            if (Signal_Drawing() == resp_ended)
+                gen_signal_state = GEN_SIGNAL_DRAWING_ENDED;
+        }
+        break;
+
+    case GEN_SIGNAL_DRAWING_ENDED:
+
+        SIGNAL_PWM_FAST_DISCHARGE;
+        gen_signal_state = GEN_SIGNAL_WAIT_T1;
+        
+#ifdef USE_SOFT_NO_CURRENT
+        current_integral = current_integral_running;
+        current_integral_running = 0;
+        current_integral_ended = 1;
+#endif
+        break;
+            
+    case GEN_SIGNAL_STOPPED_BY_INT:		//lo freno la interrupcion
+        break;
+
+    default:
+        gen_signal_state = GEN_SIGNAL_INIT;
+        break;
+    }
+
+    //el synchro en general me llega en el medio de GEN_SIGNAL_DRAWING
+    //uso sync_on_signal como doble flag
+    if ((sync_on_signal == 1) && (gen_signal_state != GEN_SIGNAL_WAIT_FOR_FIRST_SYNC))
+    {
+        sync_on_signal = 2;
+        TIM16->CNT = 0;
+
+#ifdef LED_SHOW_SYNC_SIGNAL
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif        
+    }
+    
 }
 
 typedef enum {
@@ -1193,8 +1190,10 @@ resp_t Signal_UpdatePointer (void)
     return resp;
 }
 
-//calculo el offset de la senial, T1 T2 y el sampling
+//calculo el offset de la senial, T1 y el sampling
 //el sampling lo seteo en el timer TIM1
+//TODO: cambiar esto a que realmente haga la cuenta de demora T1 por el periodo de freq
+//TODO: HUNDRED_EIGHTY T1 = T * 180 / 360
 void Signal_OffsetCalculate (void)
 {
     switch (signal_to_gen.frequency)
@@ -1203,66 +1202,60 @@ void Signal_OffsetCalculate (void)
         TIM1_ChangeTick(SAMPLE_TIME_10HZ);
 
         if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 0;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
 
         if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 250;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
+
+        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
+            signal_to_gen.t1 = 333;
 
         if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 500;
-            signal_to_gen.t2 = 0;
-        }        
+
+        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
+            signal_to_gen.t1 = 666;
+        
         break;
 
     case THIRTY_HZ:
         TIM1_ChangeTick(SAMPLE_TIME_30HZ);
         
         if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 0;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
 
         if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 83;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
+
+        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
+            signal_to_gen.t1 = 111;
 
         if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 166;
-            signal_to_gen.t2 = 0;
-        }                
+
+        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
+            signal_to_gen.t1 = 222;
+            
         break;
 
     case SIXTY_HZ:
         TIM1_ChangeTick(SAMPLE_TIME_60HZ);
         
         if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 0;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
 
         if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 42;
-            signal_to_gen.t2 = 20;    //doy 2ms de tiempo en descarga fast
-        }
+
+        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
+            signal_to_gen.t1 = 55;
 
         if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-        {
             signal_to_gen.t1 = 83;
-            signal_to_gen.t2 = 0;
-        }                
+
+        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
+            signal_to_gen.t1 = 111;
+        
         break;
     }        
 }
