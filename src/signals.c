@@ -179,7 +179,8 @@ void TreatmentManager (void)
 #ifdef USE_SOFT_OVERCURRENT
             //cargo valor maximo de corriente para el soft_overcurrent
             // soft_overcurrent_threshold = 1.2 * I_MAX * signal_to_gen.power / 100;
-            unsigned int over_c = 12 * I_MAX * signal_to_gen.power;
+            // unsigned int over_c = 12 * I_MAX * signal_to_gen.power;
+            unsigned int over_c = SIGNAL_ADMITED_WITH_OVERCURRENT * I_MAX * signal_to_gen.power;
             over_c = over_c / 1000;
             soft_overcurrent_threshold = (unsigned short) over_c;
             MA8Circular_Reset();

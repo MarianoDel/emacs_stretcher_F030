@@ -13,9 +13,9 @@
 
 //----------- Defines For Configuration -------------
 //----------- Harcode Direction -------------
-#define OWN_CHANNEL 1
+// #define OWN_CHANNEL 1
 // #define OWN_CHANNEL 2
-// #define OWN_CHANNEL 3
+#define OWN_CHANNEL 3
 
 //----------- Hardware Board Version -------------
 // #define VER_1_0
@@ -60,20 +60,25 @@
 #define USE_SOFT_OVERCURRENT
 
 //Si utiliza la proteccion de no current
-// #define USE_SOFT_NO_CURRENT
+#define USE_SOFT_NO_CURRENT
 
 //Modo de uso de la USART (placa individual single - placa enganchada bus)
 #define USART_IN_BUS
 // #define USART_SINGLE
 
 //el LED lo uso para debug de varios procesos, ver mas abajo cuales
-#define USE_LED_FOR_DEBUG
+// #define USE_LED_FOR_DEBUG
 
 //-------- Kind of Reports Sended ----------------
 
 //-------- Others Configurations depending on the formers ------------
 #ifdef USART_IN_BUS
 #define USART_TX_OUTPUT_OPEN_DRAIN
+#endif
+
+//porcentaje de corriente para SOFT OVERCURRENT, 10 -> 100% 15 -> 150%
+#ifdef USE_SOFT_OVERCURRENT
+#define SIGNAL_ADMITED_WITH_OVERCURRENT    15
 #endif
 
 //cantidad de seniales que permito sin corriente antes de poner error
