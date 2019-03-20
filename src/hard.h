@@ -13,9 +13,9 @@
 
 //----------- Defines For Configuration -------------
 //----------- Harcode Direction -------------
-// #define OWN_CHANNEL 1
+#define OWN_CHANNEL 1
 // #define OWN_CHANNEL 2
-#define OWN_CHANNEL 3
+// #define OWN_CHANNEL 3
 
 //----------- Hardware Board Version -------------
 // #define VER_1_0

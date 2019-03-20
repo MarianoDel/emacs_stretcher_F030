@@ -18,26 +18,26 @@
 
 
 //--- FUNCIONES DEL MODULO ---//
-//devuelve los numeros en un string, en la posicion number
+//devuelve los numeros de un string, en la posicion number
 //devuele la cantidad de cifras leidas
 unsigned char StringIsANumber (char * pn, unsigned short * number)
 {
-	unsigned char i;
-	char new_number [6] = {0};
+    unsigned char i;
+    char new_number [6] = {0};
 
-	//no mas de 6 caracteres
-	for (i = 0; i < 6; i++)
-	{
-		if ((*(pn + i) < 48) || (*(pn + i) > 57))
-			break;
+    //no mas de 6 caracteres
+    for (i = 0; i < 6; i++)
+    {
+        if ((*(pn + i) < '0') || (*(pn + i) > '9'))
+            break;
 
-		new_number[i] = *(pn + i);
-	}
+        new_number[i] = *(pn + i);
+    }
 
-	if (i > 0)
-		*number = atoi(new_number);
+    if (i > 0)
+        *number = atoi(new_number);
 
-	return i;
+    return i;
 }
 
 

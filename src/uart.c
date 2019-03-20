@@ -84,7 +84,7 @@ void USART1_IRQHandler(void)
         dummy = USART1->RDR & 0x0FF;
 
         //para sincronismo
-        if (dummy == '.')
+        if (dummy == '*')
         {
             sync_on_signal = 1;
 #ifdef LED_SHOW_SYNC_UART

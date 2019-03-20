@@ -69,7 +69,6 @@ unsigned int current_integral = 0;
 unsigned int current_integral_running = 0;
 unsigned char current_integral_ended = 0;
 unsigned char current_integral_errors = 0;
-unsigned short current_integral_threshold = 0;
 #endif
 
 //parametros del PID segun las seniales (es el valor elegido dividido 128)
@@ -192,12 +191,6 @@ void TreatmentManager (void)
 #endif
 #ifdef USE_SOFT_NO_CURRENT
             current_integral_errors = 0;
-            if (signal_to_gen.frequency == TEN_HZ)
-                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_10HZ;
-            else if (signal_to_gen.frequency == THIRTY_HZ)
-                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_30HZ;
-            else
-                current_integral_threshold = CURRENT_INTEGRAL_THRESHOLD_60HZ;
 #endif
             EXTIOn();
             treatment_state = TREATMENT_GENERATING;
@@ -249,7 +242,8 @@ void TreatmentManager (void)
             current_integral_ended = 0;
             if (current_integral_errors < CURRENT_INTEGRAL_MAX_ERRORS)
             {
-                if (current_integral < current_integral_threshold)
+                //TODO: revisar THRESHOLD en el caso de baja potencia
+                if (current_integral < CURRENT_INTEGRAL_THRESHOLD)
                 {
                     current_integral_errors++;
                     Usart1Send("e\n");
@@ -524,12 +518,19 @@ resp_t SetSignalTypeAndOffset (signal_type_t a, signal_offset_t offset)
 
 //setea la frecuencia y el timer con el que se muestrea
 //por default o error es simepre de 1500Hz -> seniales de 10Hz
-resp_t SetFrequency (signal_frequency_t a)
+resp_t SetFrequency (unsigned char entero, unsigned char decimal)
 {
     if ((treatment_state != TREATMENT_INIT_FIRST_TIME) && (treatment_state != TREATMENT_STANDBY))
         return resp_error;
 
-    signal_to_gen.frequency = a;
+    if (decimal >= 100)
+        return resp_error;
+    
+    if ((entero >= FREQ_ALLOWED_MIN) && (entero <= FREQ_ALLOWED_MAX))
+    {
+        signal_to_gen.freq_int = entero;
+        signal_to_gen.freq_dec = decimal;
+    }
 
     return resp_ok;
 }
@@ -557,9 +558,12 @@ resp_t AssertTreatmentParams (void)
     if ((signal_to_gen.power > 100) || (signal_to_gen.power < 10))
         return resp;
 
-    if ((signal_to_gen.frequency != TEN_HZ) &&
-        (signal_to_gen.frequency != THIRTY_HZ) &&
-        (signal_to_gen.frequency != SIXTY_HZ))
+    //reviso frecuencia a generar
+    if (signal_to_gen.freq_dec >= 100)
+        return resp;
+    
+    if ((signal_to_gen.freq_int < FREQ_ALLOWED_MIN) &&
+        (signal_to_gen.freq_int > FREQ_ALLOWED_MAX))
         return resp;
 
     if (signal_to_gen.signal > SINUSOIDAL_SIGNAL)
@@ -575,12 +579,46 @@ resp_t AssertTreatmentParams (void)
 void SendAllConf (void)
 {
     char b [64];
+
+    //muestro el canal
     sprintf(b, "channel: %s\n", GetOwnChannel());
     Usart1Send(b);
-    sprintf(b, "signal: %d\n", signal_to_gen.signal);
+
+    //muestro la senial
+    switch (signal_to_gen.signal)
+    {
+    case SQUARE_SIGNAL:
+        Usart1Send("signal: SQUARE\n");        
+        break;
+
+    case TRIANGULAR_SIGNAL:
+        Usart1Send("signal: TRIANGULAR\n");
+        break;
+
+    case SINUSOIDAL_SIGNAL:
+        Usart1Send("signal: SINUSOIDAL\n");
+        break;
+
+    default:
+        Usart1Send("signal: error !not loaded!\n");
+        break;
+    }
+    
+    //muestro la frecuencia
+    sprintf(b, "freq: %d.%02dHz\n",
+            signal_to_gen.freq_int,
+            signal_to_gen.freq_dec);
+    
     Usart1Send(b);
-    sprintf(b, "freq: %d, offset: %d\n", signal_to_gen.frequency, signal_to_gen.offset);
+
+    //muestro el offset
+    sprintf(b, "offset: %d t1[100us]: %d\n",
+            signal_to_gen.offset,
+            signal_to_gen.t1);
+
     Usart1Send(b);
+
+    //muestro la potencia
     sprintf(b, "power: %d\n\n", signal_to_gen.power);
     Usart1Send(b);
 }
@@ -1086,72 +1124,55 @@ resp_t Signal_UpdatePointer (void)
 
 //calculo el offset de la senial, T1 y el sampling
 //el sampling lo seteo en el timer TIM1
-//TODO: cambiar esto a que realmente haga la cuenta de demora T1 por el periodo de freq
+//ticks[us] = 1/freq * 1/2 * 1/100 * 1e6 
 //TODO: HUNDRED_EIGHTY T1 = T * 180 / 360
 void Signal_OffsetCalculate (void)
 {
-    switch (signal_to_gen.frequency)
+    unsigned int ticks = 1000000;
+    unsigned int offset = 1000000;
+    unsigned short freq = 0;
+    unsigned short freq_2 = 0;
+    
+
+    //calculo cantidad de ticks para sampling como 100 puntos en medio ciclo
+    //sampling tick 1us
+    freq = signal_to_gen.freq_int * 100;
+    freq += signal_to_gen.freq_dec;
+    freq_2 = freq * 2;
+    
+    ticks = ticks / freq_2;
+    TIM1_ChangeTick((unsigned short) ticks);
+
+    //calculo el t1 en ticks de 100us segun offset
+    offset = offset / freq;
+    switch (signal_to_gen.offset)
     {
-    case TEN_HZ:
-        TIM1_ChangeTick(SAMPLE_TIME_10HZ);
-
-        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-            signal_to_gen.t1 = 0;
-
-        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-            signal_to_gen.t1 = 250;
-
-        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
-            signal_to_gen.t1 = 333;
-
-        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-            signal_to_gen.t1 = 500;
-
-        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
-            signal_to_gen.t1 = 666;
-        
+    case ZERO_DEG_OFFSET:
+        offset = 0;
         break;
 
-    case THIRTY_HZ:
-        TIM1_ChangeTick(SAMPLE_TIME_30HZ);
-        
-        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-            signal_to_gen.t1 = 0;
-
-        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-            signal_to_gen.t1 = 83;
-
-        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
-            signal_to_gen.t1 = 111;
-
-        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-            signal_to_gen.t1 = 166;
-
-        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
-            signal_to_gen.t1 = 222;
-            
+    case NINTY_DEG_OFFSET:
+        offset = offset * 90;
+        offset = offset / 360;
         break;
 
-    case SIXTY_HZ:
-        TIM1_ChangeTick(SAMPLE_TIME_60HZ);
-        
-        if (signal_to_gen.offset == ZERO_DEG_OFFSET)
-            signal_to_gen.t1 = 0;
-
-        if (signal_to_gen.offset == NINTY_DEG_OFFSET)
-            signal_to_gen.t1 = 42;
-
-        if (signal_to_gen.offset == HUNDRED_TWENTY_DEG_OFFSET)
-            signal_to_gen.t1 = 55;
-
-        if (signal_to_gen.offset == HUNDRED_EIGHTY_DEG_OFFSET)
-            signal_to_gen.t1 = 83;
-
-        if (signal_to_gen.offset == TWO_HUNDRED_FORTY_DEG_OFFSET)
-            signal_to_gen.t1 = 111;
-        
+    case HUNDRED_TWENTY_DEG_OFFSET:
+        offset = offset * 120;
+        offset = offset / 360;
         break;
-    }        
+
+    case HUNDRED_EIGHTY_DEG_OFFSET:
+        offset = offset * 180;
+        offset = offset / 360;        
+        break;
+
+    case TWO_HUNDRED_FORTY_DEG_OFFSET:
+        offset = offset * 240;
+        offset = offset / 360;        
+        break;
+    }
+    signal_to_gen.t1 = (unsigned short) offset;
+    
 }
 
 //hubo sobrecorriente, me llaman desde la interrupcion

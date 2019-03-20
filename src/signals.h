@@ -23,13 +23,6 @@ typedef enum {
 } signal_type_t;
 
 typedef enum {
-	TEN_HZ = 0,
-	THIRTY_HZ,
-	SIXTY_HZ
-
-} signal_frequency_t;
-
-typedef enum {
 	ZERO_DEG_OFFSET = 0,
         NINTY_DEG_OFFSET,
 	HUNDRED_TWENTY_DEG_OFFSET,
@@ -40,8 +33,11 @@ typedef enum {
 
 typedef struct {
     signal_type_t signal;
-    signal_frequency_t frequency;
     signal_offset_t offset;
+
+    unsigned char freq_int;
+    unsigned char freq_dec;
+    
     unsigned char power;
     unsigned char synchro_needed;    //por ahora salen siempre sincronizadas
 
@@ -105,10 +101,10 @@ typedef enum
 #define ERROR_FLUSH_MASK					0xff
 
 #define CURRENT_INTEGRAL_MAX_ERRORS        SIGNAL_ADMITED_WITH_NO_CURRENT
-//TODO: cambiar esto si la senial generada tiene la misma cantidad de puntos para todas las freq
-#define CURRENT_INTEGRAL_THRESHOLD_10HZ         270
-#define CURRENT_INTEGRAL_THRESHOLD_30HZ         90
-#define CURRENT_INTEGRAL_THRESHOLD_60HZ         55
+#define CURRENT_INTEGRAL_THRESHOLD         270
+
+#define FREQ_ALLOWED_MIN    5
+#define FREQ_ALLOWED_MAX    100
 
 #define SAMPLE_TIME_10HZ    500
 #define SAMPLE_TIME_30HZ    166
@@ -140,7 +136,7 @@ typedef enum
 //--- Exported functions ---//
 // resp_t SetSignalType (signals_struct_t *, signal_type_t);
 resp_t SetSignalTypeAndOffset (signal_type_t, signal_offset_t);
-resp_t SetFrequency (signal_frequency_t);
+resp_t SetFrequency (unsigned char, unsigned char);
 resp_t SetPower (unsigned char);
 void GenerateSignalReset (void);
 

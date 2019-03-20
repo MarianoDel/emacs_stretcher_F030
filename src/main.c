@@ -303,7 +303,7 @@ int main(void)
     //prueba de nuevas rutinas
     SetOwnChannel (OWN_CHANNEL);
     SetSignalTypeAndOffset (SINUSOIDAL_SIGNAL, ZERO_DEG_OFFSET);
-    SetFrequency (THIRTY_HZ);
+    SetFrequency (30, 0);
     SetPower (50);
 #endif
 

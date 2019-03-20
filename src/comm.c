@@ -52,6 +52,7 @@ const char s_offset_240 [] = {"240"};
 const char s_ten_hz [] = {"10Hz"};
 const char s_thirty_hz [] = {"30Hz"};
 const char s_sixty_hz [] = {"60Hz"};
+
 const char s_start_treatment [] = {"start treatment"};
 const char s_stop_treatment [] = {"stop treatment"};
 const char s_status [] = {"status"};
@@ -106,6 +107,8 @@ resp_t InterpretarMsg (void)
     unsigned char broadcast = 0;
     char * pStr = buffMessages;
     unsigned short new_power = 0;
+    unsigned short new_freq_int = 0;
+    unsigned short new_freq_dec = 0;
     unsigned char decimales = 0;
     char b [30];
 
@@ -191,14 +194,27 @@ resp_t InterpretarMsg (void)
         {
             pStr += sizeof(s_frequency);		//normalizo al payload, hay un espacio
 
-            if (strncmp(pStr, s_ten_hz, sizeof(s_ten_hz) - 1) == 0)
-                resp = SetFrequency (TEN_HZ);
-            else if (strncmp(pStr, s_thirty_hz, sizeof(s_thirty_hz) - 1) == 0)
-                resp = SetFrequency (THIRTY_HZ);
-            else if (strncmp(pStr, s_sixty_hz, sizeof(s_sixty_hz) - 1) == 0)
-                resp = SetFrequency (SIXTY_HZ);
+            //lo que viene es E.DD o EE.DD, siempre 2 posiciones decimales
+            decimales = StringIsANumber(pStr, &new_freq_int);
+            // sprintf(b, "dec: %d, freq_int: %d", decimales, new_freq_int);
+            // Usart1Send(b);
+
+            if ((decimales) && (decimales < 3))
+            {
+                pStr += decimales + 1;    //normalizo con el punto
+                decimales = StringIsANumber(pStr, &new_freq_dec);
+
+                // sprintf(b, "dec: %d, freq_int: %d", decimales, new_freq_dec);
+                // Usart1Send(b);
+                
+                if ((decimales > 1) && (decimales < 3))
+                    resp = SetFrequency ((unsigned char) new_freq_int, (unsigned char) new_freq_dec);
+                else
+                    resp = resp_error;
+            }
             else
-                resp = resp_error;
+                resp = resp_error;            
+
         }
 
         //-- Power Setting
