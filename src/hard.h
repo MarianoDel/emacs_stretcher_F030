@@ -72,6 +72,8 @@
 //-------- Kind of Reports Sended ----------------
 
 //-------- Others Configurations depending on the formers ------------
+#define SYNC_CHAR    '*'
+
 #ifdef USART_IN_BUS
 #define USART_TX_OUTPUT_OPEN_DRAIN
 #endif

@@ -612,10 +612,35 @@ void SendAllConf (void)
     Usart1Send(b);
 
     //muestro el offset
-    sprintf(b, "offset: %d t1[100us]: %d\n",
-            signal_to_gen.offset,
-            signal_to_gen.t1);
+    switch (signal_to_gen.offset)
+    {
+    case ZERO_DEG_OFFSET:
+        Usart1Send("offset: 0deg\n");        
+        break;
 
+    case NINTY_DEG_OFFSET:
+        Usart1Send("offset: 90deg\n");
+        break;
+
+    case HUNDRED_TWENTY_DEG_OFFSET:
+        Usart1Send("offset: 120deg\n");
+        break;
+
+    case HUNDRED_EIGHTY_DEG_OFFSET:
+        Usart1Send("offset: 180deg\n");
+        break;
+
+    case TWO_HUNDRED_FORTY_DEG_OFFSET:
+        Usart1Send("offset: 240deg\n");
+        break;
+        
+    default:
+        Usart1Send("offset: !not loaded!\n");
+        break;
+    }
+    
+    //muestro el t1
+    sprintf(b, "t1[100us]: %d\n", signal_to_gen.t1);
     Usart1Send(b);
 
     //muestro la potencia
