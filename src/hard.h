@@ -85,7 +85,7 @@
 
 //cantidad de seniales que permito sin corriente antes de poner error
 #ifdef USE_SOFT_NO_CURRENT
-#define SIGNAL_ADMITED_WITH_NO_CURRENT    5    
+#define SIGNALS_ADMITED_WITH_NO_CURRENT    5    
 #endif
 
 #ifdef USE_LED_FOR_DEBUG

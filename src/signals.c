@@ -239,10 +239,13 @@ void TreatmentManager (void)
 #ifdef USE_SOFT_NO_CURRENT
         if (current_integral_ended)
         {
+            // char buff [64] = {0};
+            // sprintf(buff,"int: %d, err: %d\n",current_integral, current_integral_errors);
+            // Usart1Send(buff);
+            
             current_integral_ended = 0;
             if (current_integral_errors < CURRENT_INTEGRAL_MAX_ERRORS)
             {
-                //TODO: revisar THRESHOLD en el caso de baja potencia
                 if (current_integral < CURRENT_INTEGRAL_THRESHOLD)
                 {
                     current_integral_errors++;
