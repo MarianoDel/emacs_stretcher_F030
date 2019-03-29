@@ -45,6 +45,10 @@
 #define SOFT_ANNOUNCEMENT "Software V: 1.0"
 #endif
 
+//-------- Max Current Allowed on Bobins ----------------
+// #define MAX_CURRENT_3_0_A
+#define MAX_CURRENT_3_6_A
+
 //-------- Type of Program ----------------
 #define POWER_WITH_MANAGEMENT
 // #define ONLY_POWER_WITHOUT_MANAGEMENT
