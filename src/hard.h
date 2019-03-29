@@ -13,9 +13,9 @@
 
 //----------- Defines For Configuration -------------
 //----------- Harcode Direction -------------
-#define OWN_CHANNEL 1
+// #define OWN_CHANNEL 1
 // #define OWN_CHANNEL 2
-// #define OWN_CHANNEL 3
+#define OWN_CHANNEL 3
 
 //----------- Hardware Board Version -------------
 // #define VER_1_0
@@ -78,9 +78,19 @@
 #define USART_TX_OUTPUT_OPEN_DRAIN
 #endif
 
-//porcentaje de corriente para SOFT OVERCURRENT, 10 -> 100% 15 -> 150%
+
 #ifdef USE_SOFT_OVERCURRENT
+// #define USE_SOFT_OVERCURRENT_WITH_PERCENTAGE
+#define USE_SOFT_OVERCURRENT_WITH_ABSOLUTE_VALUE
+
+#ifdef USE_SOFT_OVERCURRENT_WITH_PERCENTAGE
+//porcentaje de corriente para SOFT OVERCURRENT, 10 -> 100% 15 -> 150%
 #define SIGNAL_ADMITED_WITH_OVERCURRENT    15
+#endif
+#ifdef USE_SOFT_OVERCURRENT_WITH_ABSOLUTE_VALUE
+//adicional de corriente ADC 10bits 155 puntos -> 1A
+#define SIGNAL_ADMITED_WITH_OVERCURRENT    155
+#endif
 #endif
 
 //cantidad de seniales que permito sin corriente antes de poner error
