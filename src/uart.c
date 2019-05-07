@@ -78,7 +78,7 @@ void USART1_IRQHandler(void)
 {
     unsigned char dummy;
 
-    /* USART in mode Receiver --------------------------------------------------*/
+    /* USART in Receive mode --------------------------------------------------*/
     if (USART1->ISR & USART_ISR_RXNE)
     {
         dummy = USART1->RDR & 0x0FF;
@@ -114,7 +114,7 @@ void USART1_IRQHandler(void)
         }
     }
 
-    /* USART in mode Transmitter -------------------------------------------------*/
+    /* USART in Transmit mode -------------------------------------------------*/
 
     if (USART1->CR1 & USART_CR1_TXEIE)
     {
