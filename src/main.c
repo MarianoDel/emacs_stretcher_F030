@@ -110,7 +110,7 @@ extern void EXTI2_3_IRQHandler(void);
 //------------------------------------------//
 int main(void)
 {
-    unsigned char i, ii;
+    unsigned char i;
 
     // main_state_t main_state = MAIN_INIT;
 

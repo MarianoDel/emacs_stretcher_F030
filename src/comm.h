@@ -29,7 +29,7 @@ typedef enum {
 //--- Exported functions ---//
 void UpdateCommunications (void);
 unsigned char SerialProcess (void);
-unsigned char InterpretarMsg (void);
+// unsigned char InterpretarMsg (void);
 void SetOwnChannel (unsigned char);
 char * GetOwnChannel (void);
 

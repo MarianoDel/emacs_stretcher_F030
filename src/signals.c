@@ -216,6 +216,15 @@ void TreatmentManager (void)
             Signal_OffsetCalculate();
             GenerateSignalReset();
 
+	    // fix sine oscilation on low freq, Update PID params
+	    if ((signal_to_gen.signal == SINUSOIDAL_SIGNAL) &&
+		(signal_to_gen.freq_int < 5))
+	    {
+		pid_param_p = PID_TRIANGULAR_P;
+		pid_param_i = PID_TRIANGULAR_I;
+		pid_param_d = PID_TRIANGULAR_D;
+	    }
+
 #ifdef USE_SOFT_OVERCURRENT
             //cargo valor maximo de corriente para el soft_overcurrent
 #ifdef USE_SOFT_OVERCURRENT_WITH_PERCENTAGE

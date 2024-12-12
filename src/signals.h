@@ -103,7 +103,7 @@ typedef enum
 #define CURRENT_INTEGRAL_MAX_ERRORS        SIGNALS_ADMITED_WITH_NO_CURRENT
 #define CURRENT_INTEGRAL_THRESHOLD         350    //generalmente da de 300 a 329 @10Hz
 
-#define FREQ_ALLOWED_MIN    5
+#define FREQ_ALLOWED_MIN    0
 #define FREQ_ALLOWED_MAX    100
 
 #define SAMPLE_TIME_10HZ    500

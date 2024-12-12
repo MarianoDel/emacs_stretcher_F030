@@ -23,10 +23,10 @@
 #define VER_2_0		//micro en placa grande
 
 //----------- Software Version -------------------
-// #define SOFT_VER_1_2    //usa comandos para pantalla DWIN DGUS
+#define SOFT_VER_1_2    // can work with low frequencies (lower than 5Hz)
                         //
 
-#define SOFT_VER_1_1    //usa DMA en ADC, la senial es solo la parte util, el resto son timers
+// #define SOFT_VER_1_1    //usa DMA en ADC, la senial es solo la parte util, el resto son timers
                         //para la frecuencia y pid mueve timers y velocidad de muestreo
 
 // #define SOFT_VER_1_0    //este es el soft de las primeras placas, la senial la hacia con

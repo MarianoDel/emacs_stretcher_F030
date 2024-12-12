@@ -60,6 +60,11 @@ const char s_flush_errors [] = {"flush errors"};
 const char s_getall [] = {"get all conf"};
 const char s_soft_version [] = {"soft version"};
 
+
+// Module Private Functions ----------------------------------------------------
+resp_t InterpretarMsg (void);
+
+
 /* Module functions ---------------------------------------------------------*/
 void SetOwnChannel (unsigned char ch)
 {
@@ -110,7 +115,7 @@ resp_t InterpretarMsg (void)
     unsigned short new_freq_int = 0;
     unsigned short new_freq_dec = 0;
     unsigned char decimales = 0;
-    char b [30];
+    char b [40];
 
 #ifdef LED_SHOW_MSGS
     LED_ON;
